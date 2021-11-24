@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 from config import config
 import uuid
 import maptomethod
+import base64
 
 
 config_name = os.environ.get("APP_MODE") or "development"
@@ -147,8 +148,9 @@ def map():
     map_dict={k: v for k, v in temp.items() if v != 'None'}
     session['map_dict'] = map_dict
     filename,result_string=maptomethod.get_mapping_output(session.get('data_url', None), session.get('method_url', None), map_dict, session.get('info_lines', None))
-    return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=None, result=result_string)
-
+    b64 = base64.b64encode(result_string.encode())
+    payload = b64.decode()
+    return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=None, result=result_string, filename=filename, payload=payload)
 
 @app.route("/api", methods=["GET", "POST"])
 def api():
