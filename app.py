@@ -143,6 +143,7 @@ def map():
     result= ''
     temp=request.form.to_dict()
     temp.pop("csrf_token")
+    print(temp)
     map_dict={k: v for k, v in temp.items() if v != 'None'}
     session['map_dict'] = map_dict
     filename,result_string=maptomethod.get_mapping_output(session.get('data_url', None), session.get('method_url', None), map_dict, session.get('info_lines', None))

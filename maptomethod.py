@@ -90,8 +90,8 @@ def get_mapping_output(data_url,method_url,map_dict,infolines_dict):
     for ice_key, il_id in map_dict.items():
         il=infolines_dict[il_id.split('/')[-1]]
         print(il)
-        lookup_property='$(label)' if il['label'] else '$(titles)'
-        compare_string=str(il['label']) if il['label'] else str(il['titles'])
+        lookup_property='$(label)' if 'label' in il.keys() else '$(titles)'
+        compare_string=str(il['label']) if 'label' in il.keys() else str(il['titles'])
 
         result['mappings'][ice_key]=OrderedDict({
           'sources': ['data_notes','data_columns'],
@@ -101,12 +101,12 @@ def get_mapping_output(data_url,method_url,map_dict,infolines_dict):
               'parameters': [['str1', lookup_property],['str2', compare_string]]
               },
           #'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po':[['obo:0010002', method_url+ice_key],]
+          'po':[['obo:0010002', method_url+'/'+ice_key],]
           })
         #self.mapping_yml=result
-        mapping_filename=data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
-        mapping_data=yaml.dump(result,Dumper=Dumper)
-        return mapping_filename, mapping_data
+    mapping_filename=data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
+    mapping_data=yaml.dump(result,Dumper=Dumper)
+    return mapping_filename, mapping_data
 
 
 def get_methods():
