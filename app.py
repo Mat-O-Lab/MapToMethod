@@ -129,7 +129,10 @@ def create_mapper():
             session['method_url'] =mapper.method_url
             session['methode_ICEs'] = mapper.methode_ICEs
             session['info_lines'] = mapper.info_lines
-            mapping_form.items=get_select_entries( session.get('methode_ICEs', None).keys(),session.get('info_lines', None))
+            print(mapper.info_lines)
+            info_choices=[(value['uri'], value['label'] if 'label' in value.keys() else value['titles']) for id, value in mapper.info_lines.items()]
+            info_choices.insert(0,(None,'None'))
+            mapping_form.items=get_select_entries( session.get('methode_ICEs', None).keys(),info_choices)
     return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=mapping_form, result=result)
 
 @app.route('/map', methods=['POST'])
@@ -140,9 +143,10 @@ def map():
     result= ''
     temp=request.form.to_dict()
     temp.pop("csrf_token")
-    result={k: v for k, v in temp.items() if v is not 'None'}
-    session['map_list'] = result
-    return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=None, result=result)
+    map_dict={k: v for k, v in temp.items() if v != 'None'}
+    session['map_dict'] = map_dict
+    filename,result_string=maptomethod.get_mapping_output(session.get('data_url', None), session.get('method_url', None), map_dict, session.get('info_lines', None))
+    return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=None, result=result_string)
 
 
 @app.route("/api", methods=["GET", "POST"])

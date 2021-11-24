@@ -30,8 +30,7 @@ def dict_constructor(loader, node):
 Dumper.add_representer(OrderedDict, dict_representer)
 Loader.add_constructor(_mapping_tag, dict_constructor)
 
-Dumper.add_representer(str,
-                       SafeRepresenter.represent_str)
+Dumper.add_representer(str, SafeRepresenter.represent_str)
 
 
 mseo = Namespace('https://purl.matolab.org/mseo/mid/')
@@ -51,8 +50,6 @@ class Mapper:
         self.method_url = method_url
         self.methode_ICEs=get_methode_ICE(self.method_url)
         self.info_lines=self.get_data_Info()
-        self.info_lines=[(value, label) for label, value in self.info_lines.items()]
-        self.info_lines.insert(0,(None,'None'))
         self.map_elements=list()
     def __str__(self):
         return f"Mapper: {self.data_url} {self.method_url}"
@@ -66,8 +63,51 @@ class Mapper:
         except:
             raise ValueError('url target is not a valid json-ld file')
         else:
-            InfoLines={s.split('/')[-1]: s for s, p, o in data.triples((None,  RDF.type , None)) if o in (InformationLineClass,ColumnClass)}
+            InfoLines={s.split('/')[-1]: {'uri': str(s), 'label' if data.label(s) else 'titles': str(data.label(s)) if data.label(s) else data.value(s,csvw.title)} for s, p, o in data.triples((None,  RDF.type , None)) if o in (InformationLineClass,ColumnClass)}
             return InfoLines
+
+def get_mapping_output(data_url,method_url,map_dict,infolines_dict):
+    result=OrderedDict()
+    result['prefixes']={'obo': 'http://purl.obolibrary.org/obo/',
+                        'data': data_url+'/',
+                        'method': method_url+'/'}
+    result['base']='http://purl.matolab.org/mseo/mappings/'
+    #data_file should be url at best
+    result['sources']={
+        'data_notes': {
+          'access': data_url,
+          'referenceFormulation': 'jsonpath',
+          'iterator': '$.notes[*]'
+          },
+        'data_columns': {
+          'access': data_url,
+          'referenceFormulation': 'jsonpath',
+          'iterator': '$.tableSchema.columns[*]'
+          },
+        }
+    result['mappings']={}
+
+    for ice_key, il_id in map_dict.items():
+        il=infolines_dict[il_id.split('/')[-1]]
+        print(il)
+        lookup_property='$(label)' if il['label'] else '$(titles)'
+        compare_string=str(il['label']) if il['label'] else str(il['titles'])
+
+        result['mappings'][ice_key]=OrderedDict({
+          'sources': ['data_notes','data_columns'],
+          's': 'data:$(@id)',
+          'condition': {
+              'function': 'equal',
+              'parameters': [['str1', lookup_property],['str2', compare_string]]
+              },
+          #'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
+          'po':[['obo:0010002', method_url+ice_key],]
+          })
+        #self.mapping_yml=result
+        mapping_filename=data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
+        mapping_data=yaml.dump(result,Dumper=Dumper)
+        return mapping_filename, mapping_data
+
 
 def get_methods():
   #get all ttl files from methods folder of mseo repo, create dict with method name key and url to file
@@ -145,6 +185,8 @@ def get_data_Info(data_string):
   data.parse(data_string,format='json-ld')
   InfoLines={s.split('/')[-1]: s for s, p, o in data.triples((None,  RDF.type , None)) if o in (InformationLineClass,ColumnClass)}
   return InfoLines
+
+
 
 # class MapDialog():
 #     def __init__(self, csv_meta_url='', method_url=''):
