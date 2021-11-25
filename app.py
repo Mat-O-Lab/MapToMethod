@@ -117,7 +117,7 @@ def create_mapper():
     mapping_form = MappingFormList()
     message = ''
     result= ''
-    print(request.form)
+    #print(request.form)
     if start_form.validate_on_submit():
         # url valid now test if readable -metadata.json
         try:
@@ -128,10 +128,9 @@ def create_mapper():
             flash(mapper)
             session['data_url'] = mapper.data_url
             session['method_url'] =mapper.method_url
-            session['methode_ICEs'] = mapper.methode_ICEs
-            session['info_lines'] = mapper.info_lines
-            print(mapper.info_lines)
-            info_choices=[(value['uri'], value['label'] if 'label' in value.keys() else value['titles']) for id, value in mapper.info_lines.items()]
+            session['methode_ICEs'] = mapper.ICEs
+            session['info_lines'] = mapper.InfoLines
+            info_choices=[(id, value['text'])  for id, value in mapper.InfoLines.items()]
             info_choices.insert(0,(None,'None'))
             mapping_form.items=get_select_entries( session.get('methode_ICEs', None).keys(),info_choices)
     return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=mapping_form, result=result)
@@ -144,10 +143,11 @@ def map():
     result= ''
     temp=request.form.to_dict()
     temp.pop("csrf_token")
-    print(temp)
-    map_dict={k: v for k, v in temp.items() if v != 'None'}
-    session['map_dict'] = map_dict
-    filename,result_string=maptomethod.get_mapping_output(session.get('data_url', None), session.get('method_url', None), map_dict, session.get('info_lines', None))
+    maplist=[(k, v) for k, v in temp.items() if v != 'None']
+    session['maplist'] = maplist
+    print(maplist)
+    #filename,result_string=maptomethod.get_mapping_output(session.get('data_url', None), session.get('method_url', None), maplist, session.get('info_lines', None))
+    filename,result_string=maptomethod.Mapper(session.get('data_url', None), session.get('method_url', None), session.get('info_lines', None), maplist=maplist).to_yaml()
     b64 = base64.b64encode(result_string.encode())
     payload = b64.decode()
     return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=None, result=result_string, filename=filename, payload=payload)
