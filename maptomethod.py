@@ -108,7 +108,7 @@ def get_mapping_output(data_url,method_url,map_list,infolines_dict):
           },
         }
     result['mappings']={}
-
+    print(map_list)
     for ice_key, il_id in map_list:
         il=infolines_dict[il_id]
         lookup_property='$({})'.format(il['property'])

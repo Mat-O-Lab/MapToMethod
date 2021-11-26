@@ -88,7 +88,7 @@ def get_select_entries(ice_list,info_list):
 def send_static(path):
     return send_from_directory("static", path)
 
-SWAGGER_URL = "/swagger"
+SWAGGER_URL = "/api/docs"
 API_URL = "/static/swagger.json"
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
@@ -152,52 +152,25 @@ def map():
     payload = b64.decode()
     return render_template("index.html",logo=logo, start_form=start_form, message=message, mapping_form=None, result=result_string, filename=filename, payload=payload)
 
-@app.route("/api", methods=["GET", "POST"])
-def api():
+@app.route("/api/ices", methods=["GET"])
+def ices():
+    if request.method == "GET":
+        url = request.args.get('url')
+        return json.dumps(maptomethod.get_methode_ICE(url))
 
+@app.route("/api/infolines", methods=["GET"])
+def infolines():
+    if request.method == "GET":
+        url = request.args.get('url')
+        return json.dumps(maptomethod.get_data_Info(url))
+
+@app.route("/api/mappingfile", methods=["POST"])
+def mappingfile():
     if request.method == "POST":
-        file = request.files["data"]
-        filename = file.filename
+        content = request.get_json()
+        filename, file_data = maptomethod.Mapper(content['data_url'],content['method_url'], content['info_lines'], maplist=content['maplist'].items()).to_yaml()
+        return jsonify({"filename": filename, "filedata": file_data})
 
-        if filename == "":
-            error = "No file choosen. Please choose a diagram."
-            flash(error)
-            return redirect(url_for("index"))
-
-        os.makedirs("data", exist_ok=True)
-        input_path = os.path.join("data", filename)
-
-        ttl_filename = filename[:-3] + "ttl"
-
-        if not os.path.exists(app.config["TEMPORAL_FOLDER"]):
-            os.makedirs(app.config["TEMPORAL_FOLDER"])
-
-        ttl_filepath = os.path.join(app.config["TEMPORAL_FOLDER"], ttl_filename)
-
-        # Reading and transforming the diagram
-        #root = read_drawio_xml(file)
-        #turtle_file_string, xml_file_string, new_namespaces, errors = transform_ontology(root)
-        turtle_file_string, xml_file_string, new_namespaces, errors = file, "", None
-
-        # Eliminating keys that do not contain errors
-        new_errors = copy.copy(errors)
-        for key, error in errors.items():
-            if len(error) == 0:
-                del new_errors[key]
-
-        with open(ttl_filepath, "w") as file:
-            file.write(turtle_file_string)
-
-        session["ttl_filename"] = ttl_filename
-
-        with open(ttl_filepath, "r") as f:
-            ttl_data = f.read()
-
-        user = User(datetime.now(), input_path, ttl_filepath, errors)
-        db.session.add(user)
-        db.session.commit()
-
-        return {"ttl_data": ttl_data, "errors": new_errors, "new_namespaces": new_namespaces}
 
 
 @app.errorhandler(500)
