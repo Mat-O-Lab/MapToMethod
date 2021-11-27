@@ -52,8 +52,8 @@ class User(db.Model):
     def __repr__(self) -> str:
         return super().__repr__()
 
-#methods_dict=maptomethod.get_methods()
-methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl', 'test2': 'values2'}
+methods_dict=maptomethod.get_methods()
+#methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
 class StartForm(FlaskForm):
     data_url = URLField('URL Meta Data', validators=[DataRequired()], description='Paste URL to meta data json file create form CSVToCSVW')
@@ -175,7 +175,7 @@ def mappingfile():
 
 @app.errorhandler(500)
 def handle_500_error(e):
-    return jsonify({"error": "Server error, review the input diagram"}), 500
+    return jsonify({"error": "Server error, review the input"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
