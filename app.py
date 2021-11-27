@@ -145,7 +145,7 @@ def map():
     temp.pop("csrf_token")
     maplist=[(k, v) for k, v in temp.items() if v != 'None']
     session['maplist'] = maplist
-    print(maplist)
+    #print(maplist)
     #filename,result_string=maptomethod.get_mapping_output(session.get('data_url', None), session.get('method_url', None), maplist, session.get('info_lines', None))
     filename,result_string=maptomethod.Mapper(session.get('data_url', None), session.get('method_url', None), session.get('info_lines', None), maplist=maplist).to_yaml()
     b64 = base64.b64encode(result_string.encode())

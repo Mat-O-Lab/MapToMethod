@@ -44,6 +44,17 @@ sub_classes = prepareQuery(
 mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
 res_repo=github.Github().get_repo("Mat-O-Lab/resources")
 
+#github credatials
+mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
+res_repo=github.Github().get_repo("Mat-O-Lab/resources")
+
+def get_methods():
+  #get all ttl files from methods folder of mseo repo, create dict with method name key and url to file
+  repo = mseo_repo
+  methods_urls=[method.download_url for method in repo.get_contents("methods") if method.download_url.endswith('ttl')]
+  methods={re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)[0].split('.')[0]: url for url in methods_urls}
+  return methods
+
 class Mapper:
     def __init__(self, data_url, method_url,ICEs=None,InfoLines=None,maplist=list()):
         self.data_url = data_url
@@ -62,8 +73,6 @@ class Mapper:
     def to_yaml(self):
         #return filename and yaml file content
         return get_mapping_output(self.data_url,self.method_url,self.maplist,self.InfoLines)
-
-
 
 def get_data_Info(data_url):
     # all Information Line individuals
