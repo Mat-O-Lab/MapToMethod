@@ -1,0 +1,215 @@
+{
+    "openapi": "3.0.0",
+    "info":{
+        "description": "MapToMethod",
+        "version": "1.0.0",
+        "title": "MapToMethod",
+        "contact": {
+            "name": "Thomas Hanke",
+            "email": "thomas.hanke@imws.fraunhofer.de"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+
+    "servers":[
+        {
+            "url": "/"
+        }
+    ],
+    "paths":{
+        "/api/ices": {
+            "get": {
+                "tags": [
+                    "Information Content Entity"
+                ],
+                "summary": "Get Information Content Entities of a graph",
+                "description": "Returns all NamedIndividuals of a graph which are of type Common Core Ontology Class InformationContentEntity, or any subclass of it.",
+                "parameters": [
+                  {
+                    "in": "query",
+                    "name": "url",
+                    "type": "string",
+                    "format": "uri",
+                    "required": "true",
+                    "description": "Url to a turtle file representing the graph of a method."
+                  }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                        "200": {
+                            "description": "Information Content Entities listed.",
+                            "schema": {
+                                "$ref": "#/components/schemas/ICEs"
+                                }
+                            },
+
+                        "404": {
+                            "description": "File not found."
+                            },
+
+                        "500":{
+                            "description": "Internal server error, check the syntax of your diagram."
+                        }
+
+                    }
+                }
+            },
+        "/api/infolines": {
+            "get": {
+                "tags": [
+                    "Information Line Entity"
+                ],
+                "summary": "Get Information Line or CSVW Column Entities of a json-ld document",
+                "description": "Returns all NamedIndividuals of a graph which are of type Common Core Ontology Class InformationLine, or of the W3C Vocabulary CSVW of type Column.",
+                "parameters": [
+                  {
+                    "in": "query",
+                    "name": "url",
+                    "type": "string",
+                    "format": "uri",
+                    "required": "true",
+                    "description": "Url to a json-ld file representing the meta data of a coresponding CSV raw data file."
+                  }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                        "200": {
+                            "description": "Information Line and Column Entities listed.",
+                            "schema": {
+                                "$ref": "#/components/schemas/InfoLines"
+                                }
+                            },
+                        "404": {
+                            "description": "File not found."
+                            },
+                        "500":{
+                            "description": "Internal server error, check the syntax of your diagram."
+                        }
+                    }
+                }
+            },
+        "/api/mappingfile": {
+            "post": {
+                "tags": [
+                    "Create Mapping File"
+                ],
+                "summary": "Create a YARRRML yaml mapping file.",
+                "description": "Create a YARRRML yaml file linking Entities of a CSVW meta data file and a Information Content Entieties of a CCO graph with a set of Mapping Rules.",
+                "requestBody": {
+                  "required": "true",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/Mapper"
+                      }
+                    }
+                  }
+                },
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                        "200": {
+                            "description": "YARRRML mapping file and suggested filename.",
+                            "content": {
+                              "application/json": {
+                                "schema": {
+                                  "$ref": "#/components/schemas/MappingFile"
+                                }
+                              }
+                            }
+                          },
+                        "404": {
+                            "description": "File not found."
+                            },
+
+                        "500":{
+                            "description": "Internal server error, check the syntax of your diagram."
+                        }
+
+                    }
+                }
+            }
+    },
+    "components": {
+        "schemas":{
+            "ICEs":{
+              "description": "Information Content Entity in the graph provided as input with its URI as value.",
+              "example": "{'ICE_ID': 'http://your_privided_graph/ICE_ID',}",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "format": "uri",
+              }
+            },
+            "InfoLines":{
+              "example": '{ "InfoLine_ID": {"property": "label", "text": "label text in the csv", "uri": "https://filname-metadata.json/InfoLine_ID"}}',
+              "description": "Information Line Entity or CSVW Column in the json-ld document provided as input with name of the property field, the text value of that field and the URI of the InfoLine Entity as object properties.",
+              "type": "object",
+              "properties": {
+                  "property":{
+                      "type":"string",
+                      "description": "Name of the property of the InfomationLine Individual to which text value is refering to.",
+                    },
+                  "text":{
+                    "type":"string",
+                    "description": "Value of the property of the InfomationLine Individual to which property value is refering to.",
+                  },
+                  "uri":{
+                    "type": "string",
+                    "format": "uri",
+                  }
+              }
+            },
+            "MapList":{
+              "description": "List of ICE IDs with InfoLine Ids to be mapped to as values",
+              "example": '{ "ICE_ID": "InfoLine_ID"}',
+              "type": "object",
+              "additionalProperties": {"type": "string"}
+            },
+            "Mapper":{
+              "description": "List of ICE IDs with InfoLine Ids to be mapped to as values",
+              "required": "true",
+              "type": "object",
+              "properties": {
+                "data_url":{
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Url to a json-ld file representing the meta data of a coresponding CSV raw data file."
+                },
+                "method_url":{
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Url to a turtle file representing the graph of a CCO method."
+                },
+                "info_lines": {
+                    "$ref": "#/components/schemas/InfoLines"
+                },
+                "maplist": {
+                    "$ref": "#/components/schemas/MapList"
+                  }
+                }
+              },
+            "MappingFile":{
+              "description": "YARRRML Mapping File Output",
+              "type": "object",
+              "properties": {
+                "filename":{
+                  "type": "string",
+                  "description": "Suggested file name."
+                },
+                "filedata":{
+                  "type": "string",
+                  "description": "File content string."
+                }              }
+          }
+        }
+      }
+}
