@@ -52,7 +52,7 @@ class User(db.Model):
     def __repr__(self) -> str:
         return super().__repr__()
 
-methods_dict=maptomethod.get_methods()
+methods_dict=maptomethod.mseo_methods
 #methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
 class StartForm(FlaskForm):

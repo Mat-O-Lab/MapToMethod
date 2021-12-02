@@ -1,0 +1,33 @@
+version: '3'
+services:
+    nginx:
+      image: nginx:latest
+      container_name: nginx
+      ports:
+        - "80:80"   # I like working on 80 since you don't need to specify and looking neat on URL
+        - "443:443"
+      volumes:
+        - ./:/src
+        - ./nginx/:/etc/nginx/conf.d/
+        - /etc/ssl/certs:/etc/nginx/certs
+      depends_on:
+        - maptomethod
+      restart: always
+      networks:
+        app_deploy:
+    maptomethod:
+      build: .
+      container_name: maptomethod
+      command: bash -c "gunicorn -c /src/gunicorn_conf.py wsgi:app -b 0.0.0.0:5000"
+      volumes:
+        - ./:/src
+      expose:
+        - "5000"
+      restart: always
+      networks:
+        app_deploy:
+
+networks:
+  app_deploy:
+    driver: bridge
+
