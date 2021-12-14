@@ -32,8 +32,10 @@ Loader.add_constructor(_mapping_tag, dict_constructor)
 
 Dumper.add_representer(str, SafeRepresenter.represent_str)
 
-
-mseo = Namespace('https://purl.matolab.org/mseo/mid/')
+#mseo_url='https://purl.matolab.org/mseo/mid'
+mseo_url='https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
+cco_url='https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
+mseo = Namespace(mseo_url)
 cco = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 csvw = Namespace('http://www.w3.org/ns/csvw#')
 sub_classes = prepareQuery(
@@ -142,9 +144,9 @@ def get_mapping_output(data_url,method_url,map_list,infolines_dict):
 
 def get_ICE_classes():
   g=Graph()
-  g.parse('https://raw.githubusercontent.com/CommonCoreOntology/CommonCoreOntologies/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl',format='turtle')
+  g.parse(cco_url,format='turtle')
   #mseo = Graph()
-  g.parse("https://purl.matolab.org/mseo/mid",format='xml')
+  g.parse(str(mseo),format='xml')
   InformtionContentEntity = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
   #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
   g_ICE=list(g.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'cco': cco , 'mseo': mseo }))
@@ -153,9 +155,9 @@ def get_ICE_classes():
 
 def get_temporal_region_classes():
   g=Graph()
-  g.parse('https://raw.githubusercontent.com/CommonCoreOntology/CommonCoreOntologies/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl',format='turtle')
+  g.parse(cco_url,format='turtle')
   #mseo = Graph()
-  g.parse("https://purl.matolab.org/mseo/mid",format='xml')
+  g.parse(str(mseo),format='xml')
   TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
   #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
   g_TR=list(g.query(sub_classes, initBindings={'parent': TemporalRegionClass}, initNs={ 'cco': cco , 'mseo': mseo }))
