@@ -19,3 +19,36 @@ To try the mapping you can use [Matey](https://rml.io/yarrrml/matey/). Paste you
 You will habe to replace the url locations under sources with data.json, to point at the left Input: Data where u pastes the json-ld data.
 Now u can run the RML generation and also directly create RDF by clicking the the Generate LD Button afterwards. 
 ![Matey Example](./screenshots/matey.png)
+
+# install
+## requirements
+This installation needs docker and docker-compose
+## steps
+Clone this repo into a appropiate location with
+```bash
+git clone https://github.com/Mat-O-Lab/MapToMethod
+```
+cd into the cloned folder
+```bash
+cd MapToMethod
+```
+docker-compose will build the conatiner described in dockerfile and start it with a nginx proxy in front.
+The nginx configuration is located in nginx/nginx.conf
+To run the service as demon hit:
+```bash
+docker-compose up -d
+```
+The service will be available at <your_server>:80/
+
+## enable ssl
+Uncomment the following block in conf/nginx/nginx.conf
+```apacheconf
+#server {
+#    listen 80 default_server;
+#    server_name _;
+#    return 301 https://$host$request_uri;
+#}
+```
+and in the next server block exchange listen 80 with listen 443 ssl; also uncommented the following lines and change them to ur needs.
+Change the lines pointing to the server certificate and key to point at your certificates.
+the hosts /etc/certs folder is mounted in the nginx container by default.
