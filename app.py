@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSON
 
 from flask_wtf import FlaskForm
 from wtforms import URLField, SelectField, FieldList, FormField, StringField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Optional, URL
 #from source.chowlk.transformations import transform_ontology
 #from source.chowlk.utils import read_drawio_xml
 import xml.etree.ElementTree as ET
@@ -52,12 +52,14 @@ class User(db.Model):
     def __repr__(self) -> str:
         return super().__repr__()
 
-methods_dict=maptomethod.mseo_methods
+methods_dict=maptomethod.get_methods()
 #methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
 class StartForm(FlaskForm):
-    data_url = URLField('URL Meta Data', validators=[DataRequired()], description='Paste URL to meta data json file create form CSVToCSVW')
-    method_sel = SelectField('Method Graph', choices=[(v,k) for k,v in methods_dict.items()],description='Select a method graph from https://github.com/Mat-O-Lab/MSEO/tree/main/methods')
+    data_url = URLField('URL Meta Data', validators=[DataRequired(),URL()], description='Paste URL to meta data json file create from CSVToCSVW')
+    method_url = URLField('URL Method Data', validators=[Optional(),URL()], description='Paste URL to method graph create with MSEO')
+    method_sel = SelectField('Method Graph', choices=[(v,k) for k,v in methods_dict.items()],description='Alternativly select a method graph from https://github.com/Mat-O-Lab/MSEO/tree/main/methods')
+
 
 class SelectForm(FlaskForm):
     select = SelectField("Placeholder", default=(0, "None"),choices=[],validate_choice=False)
@@ -120,8 +122,16 @@ def create_mapper():
     #print(request.form)
     if start_form.validate_on_submit():
         # url valid now test if readable -metadata.json
+        data_url=start_form.data_url.data
+        print(start_form.method_url.data)
+        #if url to method graph provided use it if not use select widget
+        if start_form.method_url.data:
+            method_url=start_form.method_url.data
+        else:
+            method_url=start_form.method_sel.data
+
         try:
-            mapper=maptomethod.Mapper(data_url=start_form.data_url.data, method_url=start_form.method_sel.data)
+            mapper=maptomethod.Mapper(data_url=data_url, method_url=method_url)
         except (ValueError, TypeError) as err:
             flash(str(err))
         else:
@@ -170,8 +180,6 @@ def mappingfile():
         content = request.get_json()
         filename, file_data = maptomethod.Mapper(content['data_url'],content['method_url'], content['info_lines'], maplist=content['maplist'].items()).to_yaml()
         return jsonify({"filename": filename, "filedata": file_data})
-
-
 
 @app.errorhandler(500)
 def handle_500_error(e):

@@ -29,26 +29,23 @@
       </p>
       <form class='pb-3' method="post" action="{{ url_for('create_mapper') }}">
         <div class="mb-3">
-          {{ start_form.csrf_token }}
-          {{ start_form.data_url.label }}
-          {{ start_form.data_url(class="form-control", **{'aria-describedby': 'urlHelp'}) }}
-          <div id="urlHelp" class="form-text">{{ start_form.data_url.description }}</div>
-          <div class="invalid-feedback">
-            {% if start_form.data_url.errors %}
-                <ul class="errors">
-                {% for error in start_form.data_url.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-          </div>
-          {{ start_form.method_sel.label }}
-          {{ start_form.method_sel(class="form-control", **{'aria-describedby': 'methodHelp'}) }}
-          <div id="methodHelp" class="form-text">{{ start_form.method_sel.description }}</div>
-        </div>
+          {{ start_form.hidden_tag() }}
+          {% for item in start_form if item.widget.input_type != 'hidden' %}
+            {{ item.label}} {{ item(class="form-control") }}
+            <div class="invalid-feedback">
+              {% if item.errors %}
+                  <ul class="errors">
+                  {% for error in item.errors %}
+                      <li>{{ error }}</li>
+                  {% endfor %}
+                  </ul>
+              {% endif %}
+            </div>
+            <div id="methodHelp" class="form-text">{{ item.description }}</div>
+        {% endfor %}
         <button class="form-group btn btn-primary btn-lg" type="submit">Start Mapping</button>
+        </div>
       </form>
-
     </div>
     {% if mapping_form.items %}
     <div class="container-fluid collapse {% if mapping_form %} show {% endif %}" id="mappingForm">

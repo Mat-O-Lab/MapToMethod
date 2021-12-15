@@ -49,6 +49,26 @@ sub_classes = prepareQuery(
 #mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
 #res_repo=github.Github().get_repo("Mat-O-Lab/resources")
 
+mseo_graph=Graph()
+mseo_graph.parse(cco_url,format='turtle')
+mseo_graph.parse(str(mseo),format='xml')
+
+
+def get_ICE_classes():
+  InformtionContentEntity = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
+  #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
+  g_ICE=list(mseo_graph.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'cco': cco , 'mseo': mseo }))
+  ICE_classes=[result[0] for result in g_ICE]#+[result[0] for result in mseo_ICE]
+  return ICE_classes
+
+def get_temporal_region_classes():
+  TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
+  #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
+  g_TR=list(mseo_graph.query(sub_classes, initBindings={'parent': TemporalRegionClass}, initNs={ 'cco': cco , 'mseo': mseo }))
+  TR_classes=[result[0] for result in g_TR]#+[result[0] for result in mseo_ICE]
+  return TR_classes
+
+
 class Mapper:
     def __init__(self, data_url, method_url,ICEs=None,InfoLines=None,maplist=list()):
         self.data_url = data_url
@@ -141,25 +161,3 @@ def get_mapping_output(data_url,method_url,map_list,infolines_dict):
     mapping_filename=data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
     mapping_data=yaml.dump(result,Dumper=Dumper)
     return mapping_filename, mapping_data
-
-def get_ICE_classes():
-  g=Graph()
-  g.parse(cco_url,format='turtle')
-  #mseo = Graph()
-  g.parse(str(mseo),format='xml')
-  InformtionContentEntity = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
-  #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
-  g_ICE=list(g.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'cco': cco , 'mseo': mseo }))
-  ICE_classes=[result[0] for result in g_ICE]#+[result[0] for result in mseo_ICE]
-  return ICE_classes
-
-def get_temporal_region_classes():
-  g=Graph()
-  g.parse(cco_url,format='turtle')
-  #mseo = Graph()
-  g.parse(str(mseo),format='xml')
-  TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
-  #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
-  g_TR=list(g.query(sub_classes, initBindings={'parent': TemporalRegionClass}, initNs={ 'cco': cco , 'mseo': mseo }))
-  TR_classes=[result[0] for result in g_TR]#+[result[0] for result in mseo_ICE]
-  return TR_classes
