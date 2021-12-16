@@ -52,21 +52,23 @@ sub_classes = prepareQuery(
 mseo_graph=Graph()
 mseo_graph.parse(cco_url,format='turtle')
 mseo_graph.parse(str(mseo),format='xml')
+InformtionContentEntity = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
+TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
 
+def get_all_sub_classes(uri: URIRef):
+  results=list(mseo_graph.query(sub_classes, initBindings={'parent': uri}, initNs={ 'cco': cco , 'mseo': mseo }))
+  classes=[result[0] for result in results]#+[result[0] for result in mseo_ICE]
+  return classes
 
-def get_ICE_classes():
-  InformtionContentEntity = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
-  #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
-  g_ICE=list(mseo_graph.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'cco': cco , 'mseo': mseo }))
-  ICE_classes=[result[0] for result in g_ICE]#+[result[0] for result in mseo_ICE]
-  return ICE_classes
+def get_methods():
+  #get all ttl files from methods folder of mseo repo, create dict with method name key and url to file
+  mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
+  repo = mseo_repo
+  methods_urls=[method.download_url for method in repo.get_contents("methods") if method.download_url.endswith('ttl')]
+  methods={re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)[0].split('.')[0]: url for url in methods_urls}
+  return methods
 
-def get_temporal_region_classes():
-  TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
-  #mseo_ICE=list(mseo.query(sub_classes, initBindings={'parent': InformtionContentEntity}, initNs={ 'mseo': mseo }))
-  g_TR=list(mseo_graph.query(sub_classes, initBindings={'parent': TemporalRegionClass}, initNs={ 'cco': cco , 'mseo': mseo }))
-  TR_classes=[result[0] for result in g_TR]#+[result[0] for result in mseo_ICE]
-  return TR_classes
+mseo_methods=get_methods()
 
 
 class Mapper:
@@ -88,16 +90,6 @@ class Mapper:
         #return filename and yaml file content
         return get_mapping_output(self.data_url,self.method_url,self.maplist,self.InfoLines)
 
-def get_methods():
-  #get all ttl files from methods folder of mseo repo, create dict with method name key and url to file
-  mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
-  repo = mseo_repo
-  methods_urls=[method.download_url for method in repo.get_contents("methods") if method.download_url.endswith('ttl')]
-  methods={re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)[0].split('.')[0]: url for url in methods_urls}
-  return methods
-
-mseo_methods=get_methods()
-
 
 def get_data_Info(data_url):
     # all Information Line individuals
@@ -114,8 +106,8 @@ def get_data_Info(data_url):
 
 def get_methode_ICE(method_url):
   # get all the ICE individuals in the method graph
-  ICE_classes=get_ICE_classes()
-  TR_classes=get_temporal_region_classes()
+  ICE_classes=get_all_sub_classes(InformtionContentEntity)
+  TR_classes=get_all_sub_classes(TemporalRegionClass)
   class_list=ICE_classes+TR_classes
   method = Graph()
   method.parse(method_url,format='turtle')
