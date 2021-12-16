@@ -44,7 +44,7 @@
                         "200": {
                             "description": "Information Content Entities listed.",
                             "schema": {
-                                "$ref": "#/components/schemas/ICEs"
+                                "$ref": "#/components/schemas/ices"
                                 }
                             },
 
@@ -83,7 +83,7 @@
                         "200": {
                             "description": "Information Line and Column Entities listed.",
                             "schema": {
-                                "$ref": "#/components/schemas/InfoLines"
+                                "$ref": "#/components/schemas/info_lines"
                                 }
                             },
                         "404": {
@@ -140,7 +140,7 @@
     },
     "components": {
         "schemas":{
-            "ICEs":{
+            "ices":{
               "description": "Information Content Entity in the graph provided as input with its URI as value.",
               "example": "{'ICE_ID': 'http://your_privided_graph/ICE_ID',}",
               "type": "object",
@@ -149,7 +149,7 @@
                 "format": "uri",
               }
             },
-            "InfoLines":{
+            "info_lines":{
               "example": '{ "InfoLine_ID": {"property": "label", "text": "label text in the csv", "uri": "https://filname-metadata.json/InfoLine_ID"}}',
               "description": "Information Line Entity or CSVW Column in the json-ld document provided as input with name of the property field, the text value of that field and the URI of the InfoLine Entity as object properties.",
               "type": "object",
@@ -190,7 +190,7 @@
                   "description": "Url to a turtle file representing the graph of a CCO method."
                 },
                 "info_lines": {
-                    "$ref": "#/components/schemas/InfoLines"
+                    "$ref": "#/components/schemas/info_lines"
                 },
                 "maplist": {
                     "$ref": "#/components/schemas/MapList"

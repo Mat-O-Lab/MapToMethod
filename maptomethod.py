@@ -1,127 +1,161 @@
+from re import search as re_search
+import ssl
+from collections import OrderedDict
+
+from yaml import Loader, Dumper, dump
+from yaml.representer import SafeRepresenter
+from yaml.resolver import BaseResolver
+
 from rdflib import Graph, URIRef, Namespace
-from rdflib.namespace import DC, OWL, RDF, RDFS, XSD
+from rdflib.namespace import RDF, RDFS
 from rdflib.plugins.sparql import prepareQuery
 import github
-from re import search as re_search
-import base64
-#from ruamel import yaml
-import yaml
-#import requests
-from urllib.request import urlopen
 
-#disable ssl verification
-import ssl
+# disable ssl verification
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# try to use LibYAML bindings if possible
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
-from yaml.representer import SafeRepresenter
-_mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
 
-from collections import OrderedDict
 def dict_representer(dumper, data):
     return dumper.represent_dict(data.items())
+
+
 def dict_constructor(loader, node):
     return OrderedDict(loader.construct_pairs(node))
 
-Dumper.add_representer(OrderedDict, dict_representer)
-Loader.add_constructor(_mapping_tag, dict_constructor)
 
+Dumper.add_representer(OrderedDict, dict_representer)
+Loader.add_constructor(BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 Dumper.add_representer(str, SafeRepresenter.represent_str)
 
-#mseo_url='https://purl.matolab.org/mseo/mid'
-mseo_url='https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
-cco_url='https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
-mseo = Namespace(mseo_url)
+# MSEO_URL='https://purl.matolab.org/mseo/mid'
+MSEO_URL = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
+CCO_URL = 'https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
+mseo = Namespace(MSEO_URL)
 cco = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 csvw = Namespace('http://www.w3.org/ns/csvw#')
 sub_classes = prepareQuery(
-  "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
-  initNs ={"rdf": RDF,"rdsf": RDFS}
-)
-#github credatials
-#res_repo=github.Github().get_repo("Mat-O-Lab/resources")
+    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
+    initNs={"rdf": RDF, "rdsf": RDFS},
+    )
 
-#github credatials
-#mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
-#res_repo=github.Github().get_repo("Mat-O-Lab/resources")
-
-mseo_graph=Graph()
-mseo_graph.parse(cco_url,format='turtle')
-mseo_graph.parse(str(mseo),format='xml')
-InformtionContentEntity = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
+mseo_graph = Graph()
+mseo_graph.parse(CCO_URL, format='turtle')
+mseo_graph.parse(str(mseo), format='xml')
+InformtionContentEntity = URIRef(
+    "http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
 TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
 
+
 def get_all_sub_classes(uri: URIRef):
-  results=list(mseo_graph.query(sub_classes, initBindings={'parent': uri}, initNs={ 'cco': cco , 'mseo': mseo }))
-  classes=[result[0] for result in results]#+[result[0] for result in mseo_ICE]
-  return classes
+    results = list(
+        mseo_graph.query(
+                sub_classes,
+                initBindings={'parent': uri},
+                initNs={'cco': cco, 'mseo': mseo},
+                ),
+            )
+    classes = [result[0] for result in results]
+    return classes
+
 
 def get_methods():
-  #get all ttl files from methods folder of mseo repo, create dict with method name key and url to file
-  mseo_repo=github.Github().get_repo("Mat-O-Lab/MSEO")
-  repo = mseo_repo
-  methods_urls=[method.download_url for method in repo.get_contents("methods") if method.download_url.endswith('ttl')]
-  methods={re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)[0].split('.')[0]: url for url in methods_urls}
-  return methods
+    """
+    Get all ttl filenames and URLs in the MSEO methods folder.
 
-mseo_methods=get_methods()
+    Get all ttl files from methods folder of mseo repo,
+    returns dict with method name aas key and url to file as value.
+    """
+    mseo_repo = github.Github().get_repo("Mat-O-Lab/MSEO")
+    repo = mseo_repo
+    methods_urls = [method.download_url for method in repo.get_contents(
+        "methods") if method.download_url.endswith('ttl')]
+    methods = {re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)
+               [0].split('.')[0]: url for url in methods_urls}
+    return methods
+
+
+mseo_methods = get_methods()
 
 
 class Mapper:
-    def __init__(self, data_url, method_url,ICEs=None,InfoLines=None,maplist=list()):
+    def __init__(
+            self,
+            data_url,
+            method_url,
+            ices=None,
+            info_lines=None,
+            maplist=list()):
+        """Constructor"""
         self.data_url = data_url
         self.method_url = method_url
-        if not ICEs:
-            self.ICEs=get_methode_ICE(self.method_url)
+        if not ices:
+            self.ices = get_methode_ices(self.method_url)
         else:
-            self.ICEs=ICEs
-        if not InfoLines:
-            self.InfoLines=get_data_Info(self.data_url)
+            self.ices = ices
+        if not info_lines:
+            self.info_lines = get_data_info_lines(self.data_url)
         else:
-            self.InfoLines=InfoLines
-        self.maplist=maplist
+            self.info_lines = info_lines
+        self.maplist = maplist
+
     def __str__(self):
         return f"Mapper: {self.data_url} {self.method_url}"
+
     def to_yaml(self):
-        #return filename and yaml file content
-        return get_mapping_output(self.data_url,self.method_url,self.maplist,self.InfoLines)
+        # return filename and yaml file content
+        return get_mapping_output(
+            self.data_url,
+            self.method_url,
+            self.maplist,
+            self.info_lines,
+            )
 
 
-def get_data_Info(data_url):
+def get_data_info_lines(data_url):
     # all Information Line individuals
-    InformationLineClass = URIRef("http://www.ontologyrepository.com/CommonCoreOntologies/InformationLine")
-    ColumnClass=URIRef("http://www.w3.org/ns/csvw#Column")
+    information_line_class = URIRef(
+        "http://www.ontologyrepository.com/CommonCoreOntologies/InformationLine")
+    column_class = URIRef("http://www.w3.org/ns/csvw#Column")
     data = Graph()
     try:
-        data.parse(location=data_url,format='json-ld')
-    except:
-        raise ValueError('url target is not a valid json-ld file')
+        data.parse(location=data_url, format='json-ld')
+    except Exception as exc:
+        raise ValueError('url target is not a valid json-ld file') from exc
     else:
-        InfoLines={s.split('/')[-1]: {'uri': str(s), 'text': str(data.label(s)) if data.label(s) else data.value(s,csvw.title), 'property': 'label' if data.label(s) else 'titles'} for s, p, o in data.triples((None,  RDF.type , None)) if o in (InformationLineClass,ColumnClass)}
-        return InfoLines
+        info_lines = {s.split('/')[-1]: {
+            'uri': str(s),
+            'text':
+                str(data.label(s)) if
+                data.label(s) else
+                data.value(s, csvw.title),
+            'property': 'label' if data.label(s) else
+            'titles'}
+            for s, p, o in data.triples((None,  RDF.type, None)) if
+            o in (information_line_class, column_class)
+            }
+        return info_lines
 
-def get_methode_ICE(method_url):
-  # get all the ICE individuals in the method graph
-  ICE_classes=get_all_sub_classes(InformtionContentEntity)
-  TR_classes=get_all_sub_classes(TemporalRegionClass)
-  class_list=ICE_classes+TR_classes
-  method = Graph()
-  method.parse(method_url,format='turtle')
-  ICEs={s.split('/')[-1]: s for s, p, o in method.triples((None,  RDF.type , None)) if o in class_list}
-  return ICEs
 
-def get_mapping_output(data_url,method_url,map_list,infolines_dict):
-    result=OrderedDict()
-    result['prefixes']={'obo': 'http://purl.obolibrary.org/obo/',
-                        'data': data_url+'/',
-                        'method': method_url+'/'}
-    result['base']='http://purl.matolab.org/mseo/mappings/'
-    #data_file should be url at best
-    result['sources']={
+def get_methode_ices(method_url):
+    # get all the ICE individuals in the method graph
+    ice_classes = get_all_sub_classes(InformtionContentEntity)
+    tr_classes = get_all_sub_classes(TemporalRegionClass)
+    class_list = ice_classes+tr_classes
+    method = Graph()
+    method.parse(method_url, format='turtle')
+    ices = {s.split('/')[-1]: s for s, p,
+            o in method.triples((None,  RDF.type, None)) if o in class_list}
+    return ices
+
+
+def get_mapping_output(data_url, method_url, map_list, infolines_dict):
+    result = OrderedDict()
+    result['prefixes'] = {'obo': 'http://purl.obolibrary.org/obo/',
+                          'data': data_url+'/',
+                          'method': method_url+'/'}
+    result['base'] = 'http://purl.matolab.org/mseo/mappings/'
+    # data_file should be url at best
+    result['sources'] = {
         'data_notes': {
           'access': data_url,
           'referenceFormulation': 'jsonpath',
@@ -133,23 +167,26 @@ def get_mapping_output(data_url,method_url,map_list,infolines_dict):
           'iterator': '$.tableSchema.columns[*]'
           },
         }
-    result['mappings']={}
+    result['mappings'] = {}
     for ice_key, il_id in map_list:
-        il=infolines_dict[il_id]
-        lookup_property='$({})'.format(il['property'])
-        compare_string=str(il['text'])
+        _il = infolines_dict[il_id]
+        lookup_property = '$({})'.format(_il['property'])
+        compare_string = str(_il['text'])
 
-        result['mappings'][ice_key]=OrderedDict({
-          'sources': ['data_notes','data_columns'],
+        result['mappings'][ice_key] = OrderedDict({
+          'sources': ['data_notes', 'data_columns'],
           's': 'data:$(@id)',
           'condition': {
               'function': 'equal',
-              'parameters': [['str1', lookup_property],['str2', compare_string]]
+              'parameters': [
+                    ['str1', lookup_property],
+                    ['str2', compare_string],
+                ],
               },
-          #'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po':[['obo:0010002', method_url+'/'+ice_key],]
+          # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
+          'po': [['obo:0010002', method_url+'/'+ice_key], ]
           })
-        #self.mapping_yml=result
-    mapping_filename=data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
-    mapping_data=yaml.dump(result,Dumper=Dumper)
-    return mapping_filename, mapping_data
+        # self.mapping_yml=result
+    filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
+    data = dump(result, Dumper=Dumper)
+    return filename, data
