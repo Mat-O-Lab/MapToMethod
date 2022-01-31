@@ -20,7 +20,7 @@
         }
     ],
     "paths":{
-        "/api/ices": {
+        "/api/informationcontententities": {
             "get": {
                 "tags": [
                     "Information Content Entity"
@@ -44,7 +44,7 @@
                         "200": {
                             "description": "Information Content Entities listed.",
                             "schema": {
-                                "$ref": "#/components/schemas/ices"
+                                "$ref": "#/components/schemas/informationcontententities"
                                 }
                             },
 
@@ -59,13 +59,13 @@
                     }
                 }
             },
-        "/api/infolines": {
+        "/api/informationbearingentities": {
             "get": {
                 "tags": [
                     "Information Line Entity"
                 ],
-                "summary": "Get Information Line or CSVW Column Entities of a json-ld document",
-                "description": "Returns all NamedIndividuals of a graph which are of type Common Core Ontology Class InformationLine, or of the W3C Vocabulary CSVW of type Column.",
+                "summary": "Get Information Bearing Entities of a json-ld document",
+                "description": "Returns all NamedIndividuals of a graph which are of type or subclass of Common Core Ontology Class InformationBearingEntity, or of the W3C Vocabulary CSVW of type Column.",
                 "parameters": [
                   {
                     "in": "query",
@@ -83,7 +83,7 @@
                         "200": {
                             "description": "Information Line and Column Entities listed.",
                             "schema": {
-                                "$ref": "#/components/schemas/info_lines"
+                                "$ref": "#/components/schemas/informationbearingentities"
                                 }
                             },
                         "404": {
@@ -140,7 +140,7 @@
     },
     "components": {
         "schemas":{
-            "ices":{
+            "informationcontententities":{
               "description": "Information Content Entity in the graph provided as input with its URI as value.",
               "example": "{'ICE_ID': 'http://your_privided_graph/ICE_ID',}",
               "type": "object",
@@ -149,9 +149,9 @@
                 "format": "uri",
               }
             },
-            "info_lines":{
+            "informationbearingentities":{
               "example": '{ "InfoLine_ID": {"property": "label", "text": "label text in the csv", "uri": "https://filname-metadata.json/InfoLine_ID"}}',
-              "description": "Information Line Entity or CSVW Column in the json-ld document provided as input with name of the property field, the text value of that field and the URI of the InfoLine Entity as object properties.",
+              "description": "Information Bearing Entity or CSVW Column in the json-ld document provided as input with name of the property field, the text value of that field and the URI of the InfoLine Entity as object properties.",
               "type": "object",
               "properties": {
                   "property":{
@@ -189,8 +189,8 @@
                   "format": "uri",
                   "description": "Url to a turtle file representing the graph of a CCO method."
                 },
-                "info_lines": {
-                    "$ref": "#/components/schemas/info_lines"
+                "informationbearingentities": {
+                    "$ref": "#/components/schemas/informationbearingentities"
                 },
                 "maplist": {
                     "$ref": "#/components/schemas/MapList"

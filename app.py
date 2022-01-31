@@ -205,18 +205,18 @@ def map():
     )
 
 
-@app.route("/api/ices", methods=["GET"])
-def ices():
+@app.route("/api/informationcontententities", methods=["GET"])
+def informationcontententities():
     if request.method == "GET":
         url = request.args.get('url')
         return json.dumps(maptomethod.get_methode_ices(url))
 
 
-@app.route("/api/infolines", methods=["GET"])
-def infolines():
+@app.route("/api/informationbearingentities", methods=["GET"])
+def informationbearingentities():
     if request.method == "GET":
         url = request.args.get('url')
-        return json.dumps(maptomethod.get_data_info_lines(url))
+        return json.dumps(maptomethod.get_data_informationbearingentities(url))
 
 
 @app.route("/api/mappingfile", methods=["POST"])

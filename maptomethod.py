@@ -93,7 +93,8 @@ class Mapper:
         else:
             self.ices = ices
         if not info_lines:
-            self.info_lines = get_data_info_lines(self.data_url)
+            self.info_lines = get_data_informationbearingentities(
+                self.data_url)
         else:
             self.info_lines = info_lines
         self.maplist = maplist
@@ -111,7 +112,7 @@ class Mapper:
             )
 
 
-def get_data_info_lines(data_url):
+def get_data_informationbearingentities(data_url):
     # all Information Line individuals
     information_line_class = URIRef(
         "http://www.ontologyrepository.com/CommonCoreOntologies/InformationLine")
@@ -148,7 +149,7 @@ def get_methode_ices(method_url):
     return ices
 
 
-def get_mapping_output(data_url, method_url, map_list, infolines_dict):
+def get_mapping_output(data_url, method_url, map_list, informationbearingentities_dict):
     result = OrderedDict()
     result['prefixes'] = {'obo': 'http://purl.obolibrary.org/obo/',
                           'data': data_url+'/',
@@ -169,7 +170,7 @@ def get_mapping_output(data_url, method_url, map_list, infolines_dict):
         }
     result['mappings'] = {}
     for ice_key, il_id in map_list:
-        _il = infolines_dict[il_id]
+        _il = informationbearingentities_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])
         compare_string = str(_il['text'])
 
