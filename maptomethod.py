@@ -66,12 +66,16 @@ def get_methods():
     returns dict with method name aas key and url to file as value.
     """
     mseo_repo = github.Github().get_repo("Mat-O-Lab/MSEO")
-    repo = mseo_repo
-    methods_urls = [method.download_url for method in repo.get_contents(
-        "methods") if method.download_url.endswith('ttl')]
-    methods = {re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)
-               [0].split('.')[0]: url for url in methods_urls}
-    return methods
+    folder_index = mseo_repo.get_contents("methods")
+    print(folder_index)
+    if folder_index:
+        methods_urls = [
+            method.download_url for method in folder_index if method.download_url and method.download_url.endswith('ttl')]
+        methods = {re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)
+                   [0].split('.')[0]: url for url in methods_urls}
+        return methods
+    else:
+        return None
 
 
 mseo_methods = get_methods()

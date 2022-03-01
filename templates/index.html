@@ -88,7 +88,7 @@
             </ul>
         </div>
         {% endif %}
-        <code class="prettyprint" style="white-space: pre-wrap;"">{{ result }}</code>
+        <code class="prettyprint lang-yaml" style="white-space: pre-wrap;"">{{ result }}</code>
       </div>
       <a class="form-group btn btn-primary btn-lg my-3" download="{{ filename }}" href="data:text/json;base64,{{ payload }}" role="button">Download</a>
     </div>
@@ -101,6 +101,6 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js?lang=yaml&css&amp;skin=sunburst"></script>
 {{super()}}
 {% endblock %}
