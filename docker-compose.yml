@@ -3,7 +3,7 @@ services:
     maptomethod:
       build: .
       container_name: maptomethod
-      command: bash -c "gunicorn -c /src/gunicorn_conf.py wsgi:app -b 0.0.0.0:5000"
+      #command: bash -c "gunicorn -c /src/gunicorn_conf.py wsgi:app -b 0.0.0.0:5000"
       #volumes:
       #  - ./:/src
       expose:
