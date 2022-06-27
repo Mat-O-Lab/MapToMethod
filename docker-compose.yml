@@ -1,13 +1,10 @@
-version: '3'
+version: '3.7'
 services:
     maptomethod:
       build: .
       container_name: maptomethod
-      #command: bash -c "gunicorn -c /src/gunicorn_conf.py wsgi:app -b 0.0.0.0:5000"
-      #volumes:
-      #  - ./:/src
       ports:
-         - 5002:5000
+         - 5005:5000
       restart: always
       networks:
         maptomethod_net:
