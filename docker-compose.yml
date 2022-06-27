@@ -10,7 +10,7 @@ services:
          - 5002:5000
       restart: always
       networks:
-        app_deploy:
+        maptomethod_net:
 networks:
-  maptomethod_deploy:
+  maptomethod_net:
     driver: bridge
