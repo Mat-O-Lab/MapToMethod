@@ -6,12 +6,11 @@ services:
       #command: bash -c "gunicorn -c /src/gunicorn_conf.py wsgi:app -b 0.0.0.0:5000"
       #volumes:
       #  - ./:/src
-      expose:
-        - "5000"
+      ports:
+         - 5002:5000
       restart: always
       networks:
         app_deploy:
 networks:
-  app_deploy:
+  maptomethod_deploy:
     driver: bridge
-
