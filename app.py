@@ -16,8 +16,10 @@ import maptomethod
 
 config_name = os.environ.get("APP_MODE") or "development"
 
+print(config)
 app = flask.Flask(__name__)
 app.config.from_object(config[config_name])
+
 app.methods_dict = maptomethod.get_methods()
 #app.methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
