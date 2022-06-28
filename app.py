@@ -7,10 +7,7 @@ import flask
 from flask import request, render_template, flash
 from flask import send_from_directory, session, jsonify, json
 from flask_bootstrap import Bootstrap
-from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import JSON
 
 from flask_wtf import FlaskForm
 from wtforms import URLField, SelectField, FieldList, FormField
@@ -21,35 +18,22 @@ config_name = os.environ.get("APP_MODE") or "development"
 
 app = flask.Flask(__name__)
 app.config.from_object(config[config_name])
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-CORS(app)
+app.methods_dict = maptomethod.get_methods()
+#app.methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
+
 bootstrap = Bootstrap(app)
 
-# Schema definition
 
 
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime)
-    input = db.Column(db.String)
-    output = db.Column(db.String)
-    errors = db.Column(JSON)
+swaggerui_blueprint = get_swaggerui_blueprint(
+    app.config['SWAGGER_URL'],
+    app.config['API_URL'],
+    config={
+        "app_name": "MapToMethod"
+    }
+)
 
-    def __init__(self, date, input, output, errors):
-        self.date = date
-        self.input = input
-        self.output = output
-        self.errors = errors
-
-    def __repr__(self) -> str:
-        return super().__repr__()
-
-
-methods_dict = maptomethod.mseo_methods
-# methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
-
+app.register_blueprint(swaggerui_blueprint, url_prefix=app.config['SWAGGER_URL'])
 
 class StartForm(FlaskForm):
     data_url = URLField('URL Meta Data', validators=[DataRequired(), URL(
@@ -61,7 +45,7 @@ class StartForm(FlaskForm):
     )
     method_sel = SelectField(
         'Method Graph',
-        choices=[(v, k) for k, v in methods_dict.items()],
+        choices=[(v, k) for k, v in app.methods_dict.items()],
         description=('Alternativly select a method graph'
                      'from https://github.com/Mat-O-Lab/MSEO/tree/main/methods'
                      )
@@ -99,20 +83,6 @@ def get_select_entries(ice_list, info_list):
 @app.route("/static/<path:path>")
 def send_static(path):
     return send_from_directory("static", path)
-
-
-SWAGGER_URL = "/api/docs"
-API_URL = "/static/swagger.json"
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={
-        "app_name": "MapToMethod"
-    }
-)
-
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
-
 
 @app.route("/", methods=["GET", "POST"])
 def index():

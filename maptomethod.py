@@ -77,10 +77,6 @@ def get_methods():
     else:
         return None
 
-
-mseo_methods = get_methods()
-
-
 class Mapper:
     def __init__(
             self,
@@ -122,6 +118,9 @@ def get_data_informationbearingentities(data_url):
         "http://www.ontologyrepository.com/CommonCoreOntologies/InformationLine")
     column_class = URIRef("http://www.w3.org/ns/csvw#Column")
     data = Graph()
+    print(data_url)
+    print(data_url.encode("ascii"))
+    data.parse(data_url, format='json-ld')
     try:
         data.parse(location=data_url, format='json-ld')
     except Exception as exc:

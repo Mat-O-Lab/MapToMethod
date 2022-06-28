@@ -2,9 +2,13 @@ version: '3.7'
 services:
     maptomethod:
       build: .
+      environment:
+        - APP_MODE = 'development'
       container_name: maptomethod
       ports:
-         - 5005:5000
+        - 5005:5000
+      volumes:
+        - .:/src
       restart: always
       networks:
         maptomethod_net:

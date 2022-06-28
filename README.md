@@ -32,23 +32,8 @@ cd into the cloned folder
 ```bash
 cd MapToMethod
 ```
-docker-compose will build the conatiner described in dockerfile and start it with a nginx proxy in front.
-The nginx configuration is located in nginx/nginx.conf
-To run the service as demon hit:
+docker-compose will build the conatiner described in dockerfile. To run the service as demon hit:
 ```bash
 docker-compose up -d
 ```
-The service will be available at <your_server>:80/
-
-## enable ssl
-Uncomment the following block in conf/nginx/nginx.conf
-```apacheconf
-#server {
-#    listen 80 default_server;
-#    server_name _;
-#    return 301 https://$host$request_uri;
-#}
-```
-and in the next server block exchange listen 80 with listen 443 ssl; also uncommented the following lines and change them to ur needs.
-Change the lines pointing to the server certificate and key to point at your certificates.
-the hosts /etc/certs folder is mounted in the nginx container by default.
+The service will be available at <your_server>:5005/
