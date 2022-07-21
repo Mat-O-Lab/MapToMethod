@@ -1,4 +1,7 @@
 # MapToMethod
+[![Publish Docker image](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/PublishContainer.yml/badge.svg)](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/PublishContainer.yml)
+[![Test Examples](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/TestExamples.yml/badge.svg?branch=main&event=push)](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/TestExamples.yml)
+
 Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.
 
 # how to use
