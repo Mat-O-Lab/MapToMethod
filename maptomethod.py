@@ -28,11 +28,13 @@ Loader.add_constructor(BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 Dumper.add_representer(str, SafeRepresenter.represent_str)
 
 # MSEO_URL='https://purl.matolab.org/mseo/mid'
+OBO = Namespace('http://purl.obolibrary.org/obo/')
 MSEO_URL = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
 CCO_URL = 'https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
-mseo = Namespace(MSEO_URL)
-cco = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
-csvw = Namespace('http://www.w3.org/ns/csvw#')
+MSEO = Namespace(MSEO_URL)
+CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
+CSVW = Namespace('http://www.w3.org/ns/csvw#')
+OA = Namespace('http://www.w3.org/ns/oa#')
 sub_classes = prepareQuery(
     "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
     initNs={"rdf": RDF, "rdsf": RDFS},
@@ -40,18 +42,17 @@ sub_classes = prepareQuery(
 
 mseo_graph = Graph()
 mseo_graph.parse(CCO_URL, format='turtle')
-mseo_graph.parse(str(mseo), format='xml')
-InformtionContentEntity = URIRef(
-    "http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity")
-TemporalRegionClass = URIRef("http://purl.obolibrary.org/obo/BFO_0000008")
-
+mseo_graph.parse(str(MSEO), format='xml')
+InformtionContentEntity = CCO.InformationContentEntity
+TemporalRegionClass = OBO.BFO_0000008
+ContentToBearingRelation = OBO.RO_0010002
 
 def get_all_sub_classes(uri: URIRef):
     results = list(
         mseo_graph.query(
                 sub_classes,
                 initBindings={'parent': uri},
-                initNs={'cco': cco, 'mseo': mseo},
+                initNs={'cco': CCO, 'mseo': MSEO},
                 ),
             )
     classes = [result[0] for result in results]
@@ -114,9 +115,8 @@ class Mapper:
 
 def get_data_informationbearingentities(data_url):
     # all Information Line individuals
-    information_line_class = URIRef(
-        "http://www.ontologyrepository.com/CommonCoreOntologies/InformationLine")
-    column_class = URIRef("http://www.w3.org/ns/csvw#Column")
+    annotation_class = OA.Annotation
+    column_class = CSVW.Column
     data = Graph()
     print(data_url)
     print(data_url.encode("ascii"))
@@ -131,11 +131,11 @@ def get_data_informationbearingentities(data_url):
             'text':
                 str(data.label(s)) if
                 data.label(s) else
-                data.value(s, csvw.title),
+                data.value(s, CSVW.title),
             'property': 'label' if data.label(s) else
             'titles'}
             for s, p, o in data.triples((None,  RDF.type, None)) if
-            o in (information_line_class, column_class)
+            o in (annotation_class, column_class)
             }
         return info_lines
 
@@ -154,7 +154,7 @@ def get_methode_ices(method_url):
 
 def get_mapping_output(data_url, method_url, map_list, informationbearingentities_dict):
     result = OrderedDict()
-    result['prefixes'] = {'obo': 'http://purl.obolibrary.org/obo/',
+    result['prefixes'] = {'obo': str(OBO),
                           'data': data_url+'/',
                           'method': method_url+'/'}
     result['base'] = 'http://purl.matolab.org/mseo/mappings/'
@@ -188,7 +188,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
                 ],
               },
           # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po': [['obo:0010002', method_url+'/'+ice_key], ]
+          'po': [[str(ContentToBearingRelation), method_url+'/'+ice_key], ]
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
