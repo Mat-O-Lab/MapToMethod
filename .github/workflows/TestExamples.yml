@@ -33,7 +33,10 @@ jobs:
           MAPLIST=$(jq '.' maplist.json)
           echo $MAPLIST
           RESULT=$(curl -X 'POST' 'http://localhost:5005/api/mappingfile' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"data_url": ${{env.DATA_URL}}, "method_url": ${{env.METHOD_URL}}, "maplist": $MAPLIST }')
-          echo $RESULT > example_mapping.yml
+          FILEDATA=$(echo $RESULT | jq -r '.filedata')
+          FILENAME=$(echo $RESULT | jq -r '.filename')
+          echo $FILENAME
+          echo $FILEDATA > $FILENAME
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
         with:
