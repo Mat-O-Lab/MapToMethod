@@ -30,7 +30,8 @@ jobs:
           echo $RESULT > bearingentities.json
           RESULT=$(curl -X 'GET' 'http://localhost:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*')
           echo $RESULT > contententities.json
-          MAPLIST=$(jq '.' maplist.json)
+          #MAPLIST=$(jq '.' maplist.json)
+          MAPLIST=$(cat maplist.json  | jq -r '.')
           echo $MAPLIST
           RESULT=$(curl -X 'POST' \
             'http://localhost:5005/api/mappingfile' \
