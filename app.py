@@ -198,7 +198,7 @@ def mappingfile():
         filename, file_data = maptomethod.Mapper(
             content['data_url'],
             content['method_url'],
-            content['info_lines'],
+            #content['informationbearingentities'],
             maplist=content['maplist'].items()
         ).to_yaml()
         return jsonify({"filename": filename, "filedata": file_data})

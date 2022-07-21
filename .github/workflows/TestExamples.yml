@@ -9,7 +9,7 @@ on:
 env:
   WORKING_DIR: ./examples/
   DATA_URL: 'https%3A%2F%2Fgithub.com%2FMat-O-Lab%2FCSVToCSVW%2Fraw%2Fmain%2Fexamples%2Fexample-metadata.json'
-  METHOD_URL: ''
+  METHOD_URL: 'https%3A%2F%2Fgithub.com%2FMat-O-Lab%2FMSEO%2Fraw%2Fmain%2Fmethods%2FDIN_EN_ISO_527-3.drawio.ttl'
 
 jobs:
   TestExamples:
@@ -30,6 +30,8 @@ jobs:
           echo $RESULT > bearingentities.json
           RESULT=$(curl -X 'GET' 'http://localhost:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*')
           echo $RESULT > contententities.json
+          RESULT=$( -X 'POST' 'http://localhost:5005/api/mappingfile' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json", "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl", "maplist": {"SpecimenName": "AktuelleProbe0" }}')
+          echo $RESULT > example_mapping.yml
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
         with:
