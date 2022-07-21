@@ -170,14 +170,19 @@
             },
             "MapList":{
               "description": "List of ICE IDs with InfoLine Ids to be mapped to as values",
-              "example": '{ "ICE_ID": "InfoLine_ID"}',
+              "example": '{ "SpecimenName": "AktuelleProbe0"}',
               "type": "object",
               "additionalProperties": {"type": "string"}
             },
             "Mapper":{
               "description": "List of ICE IDs with InfoLine Ids to be mapped to as values",
-              "required": "true",
+              "required": {"data_url", "method_url", "maplist"},
               "type": "object",
+              "example": {
+                "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+                "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+                "maplist": { "SpecimenName": "AktuelleProbe0"}
+              },
               "properties": {
                 "data_url":{
                   "type": "string",
