@@ -1,4 +1,4 @@
-"prefixes: {data: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json/',
+prefixes: {data: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json/',
  method: 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/',
  obo: 'http://purl.obolibrary.org/obo/'}
 base: http://purl.matolab.org/mseo/mappings/
@@ -28,4 +28,4 @@ mappings:
  - [str2, Dehnung]
  po:
  - ['http://purl.obolibrary.org/obo/RO_0010002', 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StrainMeasurementInformation']
-"
+
