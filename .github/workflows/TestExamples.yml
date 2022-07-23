@@ -39,8 +39,7 @@ jobs:
             -d @request.json -v --connect-timeout 5)
           FILENAME=$(echo $RESULT | jq -r '.filename')
           FILEDATA=$(echo $RESULT | jq -r '.filedata')
-          printf $FILENAME
-          jq . "$FILEDATA" > $FILENAME
+          jq . <<< "$FILEDATA" > $FILENAME
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
         with:
