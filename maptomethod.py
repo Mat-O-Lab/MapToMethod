@@ -171,7 +171,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
           'iterator': '$.tableSchema.columns[*]'
           },
         }
-    result['mappings'] = {}
+    result['mappings'] = OrderedDict()
     for ice_key, il_id in map_list:
         _il = informationbearingentities_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])
