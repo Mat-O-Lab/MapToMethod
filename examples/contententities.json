@@ -1,1 +1,25 @@
-{"ExperimentDate": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ExperimentDate", "ExperimentDateIdentifier": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ExperimentDateIdentifier", "ForceMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ForceMeasurementInformation", "LenghtMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/LenghtMeasurementInformation", "LoadCellIdentifer": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/LoadCellIdentifer", "MaxStrainMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/MaxStrainMeasurementInformation", "OperatorName": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/OperatorName", "SpecimenName": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/SpecimenName", "Standard": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/Standard", "StandardIdentifier": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StandardIdentifier", "StartLenghtMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StartLenghtMeasurementInformation", "StrainMaxForce": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StrainMaxForce", "StrainMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StrainMeasurementInformation", "StressMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StressMeasurementInformation", "TensileStrenghtMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TensileStrenghtMeasurementInformation", "TestMachineIdentifer": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestMachineIdentifer", "TestPlan": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestPlan", "TestPlanName": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestPlanName", "TestTimeInterval": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestTimeInterval", "ThicknessMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ThicknessMeasurementInformation", "TimeOfBreak": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TimeOfBreak", "TimeOfMaxStress": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TimeOfMaxStress", "WidthMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/WidthMeasurementInformation"}
+{
+  "ExperimentDate": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ExperimentDate",
+  "ExperimentDateIdentifier": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ExperimentDateIdentifier",
+  "ForceMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ForceMeasurementInformation",
+  "LenghtMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/LenghtMeasurementInformation",
+  "LoadCellIdentifer": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/LoadCellIdentifer",
+  "MaxStrainMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/MaxStrainMeasurementInformation",
+  "OperatorName": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/OperatorName",
+  "SpecimenName": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/SpecimenName",
+  "Standard": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/Standard",
+  "StandardIdentifier": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StandardIdentifier",
+  "StartLenghtMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StartLenghtMeasurementInformation",
+  "StrainMaxForce": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StrainMaxForce",
+  "StrainMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StrainMeasurementInformation",
+  "StressMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/StressMeasurementInformation",
+  "TensileStrenghtMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TensileStrenghtMeasurementInformation",
+  "TestMachineIdentifer": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestMachineIdentifer",
+  "TestPlan": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestPlan",
+  "TestPlanName": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestPlanName",
+  "TestTimeInterval": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TestTimeInterval",
+  "ThicknessMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/ThicknessMeasurementInformation",
+  "TimeOfBreak": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TimeOfBreak",
+  "TimeOfMaxStress": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/TimeOfMaxStress",
+  "WidthMeasurementInformation": "https://purl.matolab.org/mseo/methods/DIN_EN_ISO_527-3/WidthMeasurementInformation"
+}
