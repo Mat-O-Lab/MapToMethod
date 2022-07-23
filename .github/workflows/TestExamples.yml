@@ -38,8 +38,7 @@ jobs:
             -H 'Content-Type: application/json' \
             -d @request.json -v --connect-timeout 5)
           FILENAME=$(echo $RESULT | jq -r '.filename')
-          FILEDATA=$(echo $RESULT | jq -r '.filedata')
-          jq . <<< "$FILEDATA" > $FILENAME
+          jq .filedata <<< $RESULT > $FILENAME
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
         with:
