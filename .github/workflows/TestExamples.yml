@@ -35,7 +35,8 @@ jobs:
             -d @request.json -v --connect-timeout 5)"
           FILENAME=$(echo "$RESULT" | jq -r '.filename')
           YAMLDATA=$(jq .filedata <<< "$RESULT")
-          echo -e $YAMLDATA > $FILENAME
+          #remove quots
+          echo -e ${YAMLDATA:1:-1} > $FILENAME
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
         with:
