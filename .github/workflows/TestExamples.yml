@@ -40,7 +40,7 @@ jobs:
           FILENAME=$(echo "$RESULT" | jq -r '.filename')
           jq .filedata <<< "$RESULT"
           echo $FILENAME
-          jq .filedata <<< "$RESULT" >> $FILENAME
+          jq .filedata <<< "$RESULT" | jq . > $FILENAME
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
         with:
