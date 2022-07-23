@@ -26,20 +26,14 @@ jobs:
       - name: create YARRRML mapping
         working-directory: ${{env.WORKING_DIR}}
         run: |
-          RESULT=$(curl -X 'GET' 'http://localhost:5005/api/informationbearingentities?url=${{env.DATA_URL}}' -H 'accept: */*')
-          echo $RESULT > bearingentities.json
-          RESULT=$(curl -X 'GET' 'http://localhost:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*')
-          echo $RESULT > contententities.json
-          #MAPLIST=$(jq '.' request.json)
-          #echo $MAPLIST
+          curl -X 'GET' 'http://localhost:5005/api/informationbearingentities?url=${{env.DATA_URL}}' -H 'accept: */*' | jq . > bearingentities.json
+          curl -X 'GET' 'http://localhost:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*'| jq . > contententities.json
           RESULT="$(curl -X 'POST' \
             'http://localhost:5005/api/mappingfile' \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
             -d @request.json -v --connect-timeout 5)"
           FILENAME=$(echo "$RESULT" | jq -r '.filename')
-          jq .filedata <<< "$RESULT"
-          echo $FILENAME
           jq .filedata <<< "$RESULT" | jq . > $FILENAME
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
