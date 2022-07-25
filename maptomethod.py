@@ -188,7 +188,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
                 ],
               },
           # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po': [[str(ContentToBearingRelation), method_url+'/'+ice_key], ]
+          'po': [[str(ContentToBearingRelation), method_url+'/'+ice_key+'~iri'], ]
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
