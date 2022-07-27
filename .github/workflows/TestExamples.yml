@@ -26,8 +26,9 @@ jobs:
       - name: create YARRRML mapping
         working-directory: ${{env.WORKING_DIR}}
         run: |
-          curl -X 'GET' 'http://localhost:5005/api/informationbearingentities?url=${{env.DATA_URL}}' -H 'accept: */*' | jq . > bearingentities.json
-          curl -X 'GET' 'http://localhost:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*'| jq . > contententities.json
+          docker logs maptomethod
+          curl -X 'GET' 'http://maptomethod:5005/api/informationbearingentities?url=${{env.DATA_URL}}' -H 'accept: */*' | jq . > bearingentities.json
+          curl -X 'GET' 'http://maptomethod:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*'| jq . > contententities.json
           RESULT="$(curl -X 'POST' \
             'http://localhost:5005/api/mappingfile' \
             -H 'accept: application/json' \
