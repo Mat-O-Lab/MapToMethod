@@ -43,9 +43,11 @@ sub_classes = prepareQuery(
 mseo_graph = Graph()
 mseo_graph.parse(CCO_URL, format='turtle')
 mseo_graph.parse(str(MSEO), format='xml')
+
 InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = OBO.BFO_0000008
 ContentToBearingRelation = OBO.RO_0010002
+
 
 def get_all_sub_classes(uri: URIRef):
     results = list(
@@ -153,6 +155,11 @@ def get_methode_ices(method_url):
 
 
 def get_mapping_output(data_url, method_url, map_list, informationbearingentities_dict):
+    g=Graph()
+    g.bind('method', Namespace( method_url+'/'))
+    g.bind('data_url', Namespace( method_url+'/'))
+    g.bind('obo', OBO)
+    
     result = OrderedDict()
     result['prefixes'] = {'obo': str(OBO),
                           'data': data_url+'/',
@@ -172,6 +179,8 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
           },
         }
     result['mappings'] = OrderedDict()
+
+
     for ice_key, il_id in map_list:
         _il = informationbearingentities_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])
@@ -188,7 +197,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
                 ],
               },
           # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po': [[str(ContentToBearingRelation), method_url+'/'+ice_key+'~iri'], ]
+          'po': [[ContentToBearingRelation.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
