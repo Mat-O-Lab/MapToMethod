@@ -121,39 +121,23 @@ def get_data_informationbearingentities(data_url):
     annotation_class = OA.Annotation
     column_class = CSVW.Column
     data = Graph()
-    print(data_url)
-    print(data_url.encode("ascii"))
-    data.parse(data_url, format='json-ld')
-    info_lines = {s.split('/')[-1]: {
-        'uri': str(s),
-        'text':
-            str(data.value(s, RDFS.label)) if
-            data.value(s, RDFS.label) else
-            data.value(s, CSVW.title),
-        'property': 'label' if data.value(s, RDFS.label) else
-        'titles'}
-        for s, p, o in data.triples((None,  RDF.type, None)) if
-        o in (annotation_class, column_class)
-    }
-    return info_lines
-
-    # try:
-    #     data.parse(location=data_url, format='json-ld')
-    # except Exception as exc:
-    #     raise ValueError('url target is not a valid json-ld file') from exc
-    # else:
-    #     info_lines = {s.split('/')[-1]: {
-    #         'uri': str(s),
-    #         'text':
-    #             str(data.label(s)) if
-    #             data.label(s) else
-    #             data.value(s, CSVW.title),
-    #         'property': 'label' if data.label(s) else
-    #         'titles'}
-    #         for s, p, o in data.triples((None,  RDF.type, None)) if
-    #         o in (annotation_class, column_class)
-    #         }
-    #     return info_lines
+    try:
+        data.parse(location=data_url, format='json-ld')
+    except Exception as exc:
+        raise ValueError('url target is not a valid json-ld file') from exc
+    else:
+        info_lines = {s.split('/')[-1]: {
+            'uri': str(s),
+            'text':
+                str(data.label(s)) if
+                data.label(s) else
+                data.value(s, CSVW.title),
+            'property': 'label' if data.label(s) else
+            'titles'}
+            for s, p, o in data.triples((None,  RDF.type, None)) if
+            o in (annotation_class, column_class)
+            }
+        return info_lines
 
 
 def get_methode_ices(method_url):
