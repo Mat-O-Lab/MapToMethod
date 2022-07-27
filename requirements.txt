@@ -9,7 +9,7 @@ Flask-WTF==1.0.0
 PyGithub
 pyparsing
 PyYAML==3.13
-rdflib
+rdflib>=6.0.0
 webencodings==0.5.1
 WTForms==3.0.0
 gunicorn

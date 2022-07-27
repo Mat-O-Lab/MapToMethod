@@ -27,6 +27,11 @@ Dumper.add_representer(OrderedDict, dict_representer)
 Loader.add_constructor(BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 Dumper.add_representer(str, SafeRepresenter.represent_str)
 
+sub_classes = prepareQuery(
+    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
+    initNs={"rdf": RDF, "rdfs": RDFS},
+    )
+
 # MSEO_URL='https://purl.matolab.org/mseo/mid'
 OBO = Namespace('http://purl.obolibrary.org/obo/')
 MSEO_URL = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
@@ -35,10 +40,6 @@ MSEO = Namespace(MSEO_URL)
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 CSVW = Namespace('http://www.w3.org/ns/csvw#')
 OA = Namespace('http://www.w3.org/ns/oa#')
-sub_classes = prepareQuery(
-    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
-    initNs={"rdf": RDF, "rdsf": RDFS},
-    )
 
 mseo_graph = Graph()
 mseo_graph.parse(CCO_URL, format='turtle')
