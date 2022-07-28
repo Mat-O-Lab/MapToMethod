@@ -28,9 +28,8 @@ Loader.add_constructor(BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 Dumper.add_representer(str, SafeRepresenter.represent_str)
 
 sub_classes = prepareQuery(
-    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
-    initNs={"rdf": RDF, "rdfs": RDFS},
-    )
+    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}"
+)
 
 # MSEO_URL='https://purl.matolab.org/mseo/mid'
 OBO = Namespace('http://purl.obolibrary.org/obo/')
