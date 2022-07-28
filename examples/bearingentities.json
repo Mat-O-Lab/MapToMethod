@@ -2,17 +2,17 @@
   "AktuelleProbe0": {
     "property": "label",
     "text": "aktuelle Probe",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/AktuelleProbe0"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/AktuelleProbe0"
   },
   "Bruchkraft13": {
     "property": "label",
     "text": "Bruchkraft",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Bruchkraft13"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Bruchkraft13"
   },
   "Datum15": {
     "property": "label",
     "text": "Datum",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Datum15"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Datum15"
   },
   "Dehnung": {
     "property": "titles",
@@ -22,57 +22,57 @@
   "DehnungBeiBruch10": {
     "property": "label",
     "text": "Dehnung bei Bruch",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/DehnungBeiBruch10"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/DehnungBeiBruch10"
   },
   "DehnungBeiFmax9": {
     "property": "label",
     "text": "Dehnung bei Fmax",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/DehnungBeiFmax9"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/DehnungBeiFmax9"
   },
   "EModul8": {
     "property": "label",
     "text": "E-Modul",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/EModul8"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/EModul8"
   },
   "Einspannlaenge1": {
     "property": "label",
     "text": "Einspannlänge",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Einspannlaenge1"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Einspannlaenge1"
   },
   "GeschwindigkeitEModul14": {
     "property": "label",
     "text": "Geschwindigkeit E-Modul",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/GeschwindigkeitEModul14"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/GeschwindigkeitEModul14"
   },
   "Kraftmaximum12": {
     "property": "label",
     "text": "Kraftmaximum",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Kraftmaximum12"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Kraftmaximum12"
   },
   "Messlaenge2": {
     "property": "label",
     "text": "Messlänge",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Messlaenge2"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Messlaenge2"
   },
   "ObereStreckgrenze11": {
     "property": "label",
     "text": "obere Streckgrenze",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/ObereStreckgrenze11"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/ObereStreckgrenze11"
   },
   "ProbenbreiteB03": {
     "property": "label",
     "text": "Probenbreite b0",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/ProbenbreiteB03"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/ProbenbreiteB03"
   },
   "ProbendickeA04": {
     "property": "label",
     "text": "Probendicke a0",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/ProbendickeA04"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/ProbendickeA04"
   },
   "Pruefgeschwindigkeit5": {
     "property": "label",
     "text": "Prüfgeschwindigkeit",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Pruefgeschwindigkeit5"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Pruefgeschwindigkeit5"
   },
   "Pruefzeit": {
     "property": "titles",
@@ -97,11 +97,11 @@
   "Vorkraft6": {
     "property": "label",
     "text": "Vorkraft",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Vorkraft6"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/Vorkraft6"
   },
   "WegNachBruch7": {
     "property": "label",
     "text": "Weg nach Bruch",
-    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/WegNachBruch7"
+    "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example.csv/WegNachBruch7"
   }
 }
