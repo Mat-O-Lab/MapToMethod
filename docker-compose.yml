@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3'
 services:
     maptomethod:
       image: ghcr.io/mat-o-lab/maptomethod:latest
@@ -7,11 +7,12 @@ services:
       container_name: maptomethod
       ports:
         - 5005:5000
-      volumes:
-        - .:/src
+      #volumes:
+      #  - .:/src
       restart: always
       networks:
         maptomethod_net:
 networks:
   maptomethod_net:
+    name: maptomethod_net
     driver: bridge
