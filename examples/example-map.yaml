@@ -17,7 +17,7 @@ mappings:
       - [str1, $(label)]
       - [str2, aktuelle Probe]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/SpecimenName']
+    - ['obo:RO_0010002', 'method:SpecimenName~iri']
   StrainMeasurementInformation:
     sources: [data_notes, data_columns]
     s: data:$(@id)
@@ -27,5 +27,5 @@ mappings:
       - [str1, $(titles)]
       - [str2, Dehnung]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StrainMeasurementInformation']
+    - ['obo:RO_0010002', 'method:StrainMeasurementInformation~iri']
 
