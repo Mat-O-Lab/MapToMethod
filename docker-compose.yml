@@ -1,7 +1,7 @@
 version: '3.7'
 services:
     maptomethod:
-      build: .
+      image: ghcr.io/mat-o-lab/maptomethod:latest
       environment:
         - APP_MODE=development
       container_name: maptomethod
