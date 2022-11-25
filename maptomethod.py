@@ -29,9 +29,8 @@ Loader.add_constructor(BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 Dumper.add_representer(str, SafeRepresenter.represent_str)
 
 sub_classes = prepareQuery(
-    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}",
-    initNs={"rdf": RDF, "rdfs": RDFS},
-    )
+    "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}"
+)
 
 # MSEO_URL='https://purl.matolab.org/mseo/mid'
 OBO = Namespace('http://purl.obolibrary.org/obo/')
@@ -198,7 +197,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
                 ],
               },
           # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po': [[ContentToBearingRelation.n3(g.namespace_manager), 'method:'+ice_key], ]
+          'po': [[ContentToBearingRelation.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'

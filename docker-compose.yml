@@ -1,7 +1,7 @@
-version: '3.7'
+version: '3'
 services:
     maptomethod:
-      build: .
+      image: ghcr.io/mat-o-lab/maptomethod:latest
       environment:
         - APP_MODE=development
       container_name: maptomethod
@@ -14,4 +14,5 @@ services:
         maptomethod_net:
 networks:
   maptomethod_net:
+    name: maptomethod_net
     driver: bridge
