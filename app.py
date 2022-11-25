@@ -38,8 +38,11 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 app.register_blueprint(swaggerui_blueprint, url_prefix=app.config['SWAGGER_URL'])
 
 class StartForm(FlaskForm):
-    data_url = URLField('URL Meta Data', validators=[DataRequired(), URL(
-    )], description='Paste URL to meta data json file create from CSVToCSVW')
+    data_url = URLField('URL Meta Data',
+        #validators=[DataRequired(),URL()],
+        render_kw={"placeholder": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json"},
+        description='Paste URL to meta data json file create from CSVToCSVW'
+        )
     method_url = URLField(
         'URL Method Data',
         validators=[Optional(), URL()],
@@ -113,8 +116,11 @@ def create_mapper():
     # print(request.form)
     if start_form.validate_on_submit():
         # url valid now test if readable -metadata.json
+        if not start_form.data_url.data:
+            start_form.data_url.data=start_form.data_url.render_kw['placeholder']
+            flash('URL Data File empty: using placeholder value for demonstration')
         data_url = start_form.data_url.data
-        print(start_form.method_url.data)
+        
         # if url to method graph provided use it if not use select widget
         if start_form.method_url.data:
             method_url = start_form.method_url.data
@@ -150,8 +156,11 @@ def create_mapper():
 @app.route('/map', methods=['POST'])
 def map():
     logo = './static/resources/MatOLab-Logo.svg'
-    start_form = StartForm(data_url=session.get(
-        'data_url', None), method_sel=session.get('method_url', None))
+    start_form = StartForm(
+        data_url=session.get('data_url', None),
+        method_url=session.get('method_url', None),
+        method_sel=session.get('method_url', None))
+    #start_form = StartForm()
     message = ''
     temp = request.form.to_dict()
     temp.pop("csrf_token")

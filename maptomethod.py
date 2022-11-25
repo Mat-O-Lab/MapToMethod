@@ -10,6 +10,7 @@ from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import RDF, RDFS
 from rdflib.plugins.sparql import prepareQuery
 import github
+from urllib.parse import urlparse, unquote
 
 # disable ssl verification
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -48,7 +49,6 @@ mseo_graph.parse(str(MSEO), format='xml')
 InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = OBO.BFO_0000008
 ContentToBearingRelation = OBO.RO_0010002
-
 
 def get_all_sub_classes(uri: URIRef):
     results = list(
@@ -92,6 +92,7 @@ class Mapper:
         """Constructor"""
         self.data_url = data_url
         self.method_url = method_url
+        #file_data, file_name =open_file(data_url)
         if not ices:
             self.ices = get_methode_ices(self.method_url)
         else:
@@ -121,8 +122,9 @@ def get_data_informationbearingentities(data_url):
     annotation_class = OA.Annotation
     column_class = CSVW.Column
     data = Graph()
+    url=unquote(urlparse(data_url).geturl())
     try:
-        data.parse(data_url, format='json-ld')
+        data.parse(url, format='json-ld')
     except Exception as exc:
         raise ValueError('url target is not a valid json-ld file') from exc
     else:
@@ -146,7 +148,8 @@ def get_methode_ices(method_url):
     tr_classes = get_all_sub_classes(TemporalRegionClass)
     class_list = ice_classes+tr_classes
     method = Graph()
-    method.parse(method_url, format='turtle')
+    url=unquote(urlparse(method_url).geturl())
+    method.parse(url, format='turtle')
     ices = {s.split('/')[-1]: s for s, p,
             o in method.triples((None,  RDF.type, None)) if o in class_list}
     return ices

@@ -7,7 +7,7 @@ services:
       container_name: maptomethod
       ports:
         - 5005:5000
-      #volumes:
+      # volumes:
       #  - .:/src
       restart: always
       networks:
