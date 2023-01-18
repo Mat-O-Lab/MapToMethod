@@ -6,7 +6,7 @@ services:
         - APP_MODE=development
       container_name: maptomethod
       ports:
-        - 5005:5000
+        - ${APP_PORT}:5000
       # volumes:
       #  - .:/src
       restart: always
