@@ -118,7 +118,7 @@ def create_mapper():
         # url valid now test if readable -metadata.json
         if not start_form.data_url.data:
             start_form.data_url.data=start_form.data_url.render_kw['placeholder']
-            flash('URL Data File empty: using placeholder value for demonstration')
+            flash('URL Data File empty: using placeholder value for demonstration', 'info')
         data_url = start_form.data_url.data
         
         # if url to method graph provided use it if not use select widget
@@ -131,9 +131,9 @@ def create_mapper():
             mapper = maptomethod.Mapper(
                 data_url=data_url, method_url=method_url)
         except (ValueError, TypeError) as err:
-            flash(str(err))
+            flash(str(err),'error')
         else:
-            flash(mapper)
+            flash(mapper, 'info')
             session['data_url'] = mapper.data_url
             session['method_url'] = mapper.method_url
             session['methode_ices'] = mapper.ices

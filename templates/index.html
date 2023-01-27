@@ -48,7 +48,7 @@
       </form>
     </div>
     {% if mapping_form.items %}
-    <div class="container-fluid collapse {% if mapping_form %} show {% endif %}" id="mappingForm">
+    <div class="container-fluid collapse pb-3 {% if mapping_form %} show {% endif %}" id="mappingForm">
       <div class="card card-body">
         <h5 class="card-title">Mapping Dialog</h5>
         <h6 class="card-subtitle mb-2 text-muted">Map Information Line and Colum Entities of the Meta Data File against the Information Content Entities of the Method Graph</h6>
@@ -75,20 +75,21 @@
       </div>
     </div>
     {% endif %}
-    {% with messages = get_flashed_messages() %}
-    <div class="container-fluid collapse {% if messages or result %} show {% endif %}" id="mappingForm">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    <div class="container-fluid collapse pb-3 {% if messages %} show {% endif %}" id="messages">
+      <div class="card card-body">
+        <h5 class="card-title">Messages</h5>
+        {% if messages %}
+          {% for category, message in messages %}
+          <div class="alert alert-{{'danger' if category=='error' else category}}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="container-fluid collapse pb-3 {% if result %} show {% endif %}" id="results">
       <div class="card card-body">
         <h5 class="card-title">Result</h5>
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            <ul class=flashes>
-            {% for message in messages %}
-              <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-        <code class="prettyprint lang-yaml" style="white-space: pre-wrap;"">{{ result }}</code>
+        <code class="prettyprint" style="white-space: pre-wrap;">{{ result }}</code>
       </div>
       <a class="form-group btn btn-primary btn-lg my-3" download="{{ filename }}" href="data:text/json;base64,{{ payload }}" role="button">Download</a>
     </div>
