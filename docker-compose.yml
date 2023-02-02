@@ -7,8 +7,6 @@ services:
       container_name: maptomethod
       ports:
         - ${APP_PORT}:5000
-      volumes:
-       - .:/src
       restart: always
       networks:
         maptomethod_net:
