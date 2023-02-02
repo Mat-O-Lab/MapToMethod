@@ -34,16 +34,20 @@ sub_classes = prepareQuery(
 
 # MSEO_URL='https://purl.matolab.org/mseo/mid'
 OBO = Namespace('http://purl.obolibrary.org/obo/')
-MSEO_URL = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
-CCO_URL = 'https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
-MSEO = Namespace(MSEO_URL)
+MSEO_NAMESPACE = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
+#CCO_URL = 'https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
+MSEO_URL = './ontologies/mseo.ttl'
+CCO_URL = './ontologies/cco.ttl'
+
+
+MSEO = Namespace(MSEO_NAMESPACE)
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 CSVW = Namespace('http://www.w3.org/ns/csvw#')
 OA = Namespace('http://www.w3.org/ns/oa#')
 
 mseo_graph = Graph()
 mseo_graph.parse(CCO_URL, format='turtle')
-mseo_graph.parse(str(MSEO), format='xml')
+mseo_graph.parse(MSEO_URL, format='turtle')
 
 InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = OBO.BFO_0000008
