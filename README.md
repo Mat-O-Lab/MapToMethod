@@ -4,6 +4,8 @@
 
 Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.
 
+Demo online at here: http://maptomethod.matolab.org
+
 # additional information
 The tools output is a yml file conform to [YARRRML](https://rml.io/yarrrml). The syntax lets u put down mapping rules that can be read by humans more easy then pure RML.
 To try the mapping you can use [Matey](https://rml.io/yarrrml/matey/). Paste your json-ld in the left tab and the yml output into the Input: YARRRML.
