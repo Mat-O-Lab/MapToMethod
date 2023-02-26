@@ -10,4 +10,4 @@ WORKDIR /src
 RUN curl https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.ttl > ./ontologies/mseo.ttl
 RUN curl https://raw.githubusercontent.com/CommonCoreOntology/CommonCoreOntologies/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl > ./ontologies/cco.ttl
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "wsgi:app", "--workers=3"]
+ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "wsgi:app", "--workers=3"]

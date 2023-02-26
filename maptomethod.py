@@ -1,6 +1,7 @@
 from re import search as re_search
 import ssl
 from collections import OrderedDict
+from typing import List
 
 from yaml import Loader, Dumper, dump
 from yaml.representer import SafeRepresenter
@@ -9,6 +10,7 @@ from yaml.resolver import BaseResolver
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import RDF, RDFS
 from rdflib.plugins.sparql import prepareQuery
+from rdflib.util import guess_format
 import github
 from urllib.parse import urlparse, unquote
 
@@ -53,6 +55,12 @@ InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = OBO.BFO_0000008
 ContentToBearingRelation = OBO.RO_0010002
 
+def load_graph(url,graph: Graph=Graph()):
+    parsed_url=urlparse(url)
+    format=guess_format(parsed_url.path)
+    graph.parse(unquote(parsed_url.geturl()), format=format)
+    return graph
+
 def get_all_sub_classes(uri: URIRef):
     results = list(
         mseo_graph.query(
@@ -87,22 +95,26 @@ def get_methods():
 class Mapper:
     def __init__(
             self,
-            data_url,
-            method_url,
+            data_url: str,
+            method_url: str,
+            data_subject_super_class_uris: List[URIRef] = [InformtionContentEntity,TemporalRegionClass],
+            mapping_predicate_uri: List[URIRef] = [ContentToBearingRelation],
+            method_object_super_class_uris: List[URIRef] = [OA.Annotation,CSVW.Column],
             ices=None,
             info_lines=None,
-            maplist=list()):
+            maplist=list()
+            ):
         """Constructor"""
         self.data_url = data_url
         self.method_url = method_url
         #file_data, file_name =open_file(data_url)
         if not ices:
-            self.ices = get_methode_ices(self.method_url)
+            self.ices = get_methode_ices(self.method_url,data_subject_super_class_uris)
         else:
             self.ices = ices
         if not info_lines:
             self.info_lines = get_data_informationbearingentities(
-                self.data_url)
+                self.data_url,method_object_super_class_uris)
         else:
             self.info_lines = info_lines
         self.maplist = maplist
@@ -120,39 +132,36 @@ class Mapper:
             )
 
 
-def get_data_informationbearingentities(data_url):
-    # all Information Line individuals
-    annotation_class = OA.Annotation
-    column_class = CSVW.Column
-    data = Graph()
-    url=unquote(urlparse(data_url).geturl())
-    try:
-        data.parse(url, format='json-ld')
-    except Exception as exc:
-        raise ValueError('url target is not a valid json-ld file') from exc
-    else:
-        info_lines = {s.split('/')[-1]: {
-            'uri': str(s),
-            'text':
-                str(data.value(s, RDFS.label)) if
-                data.value(s, RDFS.label) else
-                data.value(s, CSVW.title),
-            'property': 'label' if data.value(s, RDFS.label) else
-            'titles'}
-            for s, p, o in data.triples((None,  RDF.type, None)) if
-            o in (annotation_class, column_class)
-            }
-        return info_lines
+def get_data_informationbearingentities(data_url,entity_classes: List[URIRef]):
+    data=load_graph(data_url)
+    info_lines = {s.split('/')[-1]: {
+        'uri': str(s),
+        'text':
+            str(data.value(s, RDFS.label)) if
+            data.value(s, RDFS.label) else
+            data.value(s, CSVW.title),
+        'property': 'label' if data.value(s, RDFS.label) else
+        'titles'}
+        for s, p, o in data.triples((None,  RDF.type, None)) if
+        o in entity_classes
+        }
+    return info_lines
 
 
-def get_methode_ices(method_url):
+def get_methode_ices(method_url,entity_classes: List[URIRef]):
     # get all the ICE individuals in the method graph
     ice_classes = get_all_sub_classes(InformtionContentEntity)
     tr_classes = get_all_sub_classes(TemporalRegionClass)
     class_list = ice_classes+tr_classes
-    method = Graph()
-    url=unquote(urlparse(method_url).geturl())
-    method.parse(url, format='turtle')
+    print('oldschool\n')
+    print(len(class_list))
+    print(class_list[0])
+    subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
+    class_list=[item for sublist in subclasses for item in sublist]
+    print('newschool\n')
+    print(len(class_list))
+    print(class_list)
+    method=load_graph(method_url)
     ices = {s.split('/')[-1]: s for s, p,
             o in method.triples((None,  RDF.type, None)) if o in class_list}
     return ices
