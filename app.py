@@ -136,10 +136,10 @@ def create_mapper():
             flash(mapper, 'info')
             session['data_url'] = mapper.data_url
             session['method_url'] = mapper.method_url
-            session['methode_ices'] = mapper.ices
-            session['info_lines'] = mapper.info_lines
+            session['methode_ices'] = mapper.objects
+            session['info_lines'] = mapper.subjects
             info_choices = [(id, value['text']) for
-                            id, value in mapper.info_lines.items()]
+                            id, value in mapper.subjects.items()]
             info_choices.insert(0, (None, 'None'))
             mapping_form.items = get_select_entries(
                 session.get('methode_ices', None).keys(), info_choices)

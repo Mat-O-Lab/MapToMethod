@@ -98,25 +98,26 @@ class Mapper:
             data_url: str,
             method_url: str,
             data_subject_super_class_uris: List[URIRef] = [InformtionContentEntity,TemporalRegionClass],
-            mapping_predicate_uri: List[URIRef] = [ContentToBearingRelation],
+            mapping_predicate_uri: URIRef = ContentToBearingRelation,
             method_object_super_class_uris: List[URIRef] = [OA.Annotation,CSVW.Column],
-            ices=None,
-            info_lines=None,
+            objects=None,
+            subjects=None,
             maplist=list()
             ):
         """Constructor"""
         self.data_url = data_url
         self.method_url = method_url
+        self.mapping_predicate_uri=mapping_predicate_uri
         #file_data, file_name =open_file(data_url)
-        if not ices:
-            self.ices = get_methode_ices(self.method_url,data_subject_super_class_uris)
+        if not objects:
+            self.objects = get_methode_ices(self.method_url,data_subject_super_class_uris)
         else:
-            self.ices = ices
-        if not info_lines:
-            self.info_lines = get_data_informationbearingentities(
+            self.objects = objects
+        if not subjects:
+            self.subjects = get_data_informationbearingentities(
                 self.data_url,method_object_super_class_uris)
         else:
-            self.info_lines = info_lines
+            self.subjects = subjects
         self.maplist = maplist
 
     def __str__(self):
@@ -128,7 +129,8 @@ class Mapper:
             self.data_url,
             self.method_url,
             self.maplist,
-            self.info_lines,
+            self.subjects,
+            self.mapping_predicate_uri
             )
 
 
@@ -158,7 +160,7 @@ def get_methode_ices(method_url,entity_classes: List[URIRef]):
     return ices
 
 
-def get_mapping_output(data_url, method_url, map_list, informationbearingentities_dict):
+def get_mapping_output(data_url: str, method_url: str, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef):
     g=Graph()
     g.bind('method', Namespace( method_url+'/'))
     g.bind('data_url', Namespace( method_url+'/'))
@@ -186,7 +188,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
 
 
     for ice_key, il_id in map_list:
-        _il = informationbearingentities_dict[il_id]
+        _il = subjects_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])
         compare_string = str(_il['text'])
 
@@ -201,7 +203,7 @@ def get_mapping_output(data_url, method_url, map_list, informationbearingentitie
                 ],
               },
           # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po': [[ContentToBearingRelation.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
+          'po': [[mapping_predicate_uri.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
