@@ -1,7 +1,8 @@
 from re import search as re_search
 import ssl
 from collections import OrderedDict
-from typing import List
+from pydantic import AnyUrl
+from typing import Dict, List, Tuple
 
 from yaml import Loader, Dumper, dump
 from yaml.representer import SafeRepresenter
@@ -55,17 +56,34 @@ InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = OBO.BFO_0000008
 ContentToBearingRelation = OBO.RO_0010002
 
-def load_graph(url,graph: Graph=Graph()):
+def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
+    """_summary_
+
+    Args:
+        url (AnyUrl): Url to an web ressource
+        graph (Graph, optional): Existing Rdflib Graph object to parse data to. Defaults to Graph().
+
+    Returns:
+        Graph: Rdflib graph Object
+    """
     parsed_url=urlparse(url)
     format=guess_format(parsed_url.path)
     graph.parse(unquote(parsed_url.geturl()), format=format)
     return graph
 
-def get_all_sub_classes(uri: URIRef):
+def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
+    """Gets all subclasses of a given class.
+
+    Args:
+        superclass (URIRef): Rdflib URIRef of the superclass
+
+    Returns:
+        List[URIRef]: List of all subclasses
+    """
     results = list(
         mseo_graph.query(
                 sub_classes,
-                initBindings={'parent': uri},
+                initBindings={'parent': superclass},
                 initNs={'cco': CCO, 'mseo': MSEO},
                 ),
             )
@@ -73,12 +91,11 @@ def get_all_sub_classes(uri: URIRef):
     return classes
 
 
-def get_methods():
-    """
-    Get all ttl filenames and URLs in the MSEO methods folder.
+def get_methods() -> Dict:
+    """Get all ttl filenames and URLs in the MSEO methods folder.
 
-    Get all ttl files from methods folder of mseo repo,
-    returns dict with method name aas key and url to file as value.
+    Returns:
+        Dict: Dict with method name aas key and url to file as value
     """
     mseo_repo = github.Github().get_repo("Mat-O-Lab/MSEO")
     folder_index = mseo_repo.get_contents("methods")
@@ -95,16 +112,27 @@ def get_methods():
 class Mapper:
     def __init__(
             self,
-            data_url: str,
-            method_url: str,
+            data_url: AnyUrl,
+            method_url: AnyUrl,
             data_subject_super_class_uris: List[URIRef] = [InformtionContentEntity,TemporalRegionClass],
             mapping_predicate_uri: URIRef = ContentToBearingRelation,
             method_object_super_class_uris: List[URIRef] = [OA.Annotation,CSVW.Column],
-            objects=None,
-            subjects=None,
-            maplist=list()
+            subjects: List[URIRef]=[],
+            objects: List[URIRef]=[],
+            maplist: List[Tuple[str, str]]=[]
             ):
-        """Constructor"""
+        """Mapper Class for creating Rule based yarrrml mappings for data metadata to link to a knowledge graph.
+
+        Args:
+            data_url (AnyUrl): Url to metadata describing the data to link
+            method_url (AnyUrl): Url to knowledgegraph describing context to link data to.
+            data_subject_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as subjects of the mapping rules. Defaults to [InformtionContentEntity,TemporalRegionClass].
+            mapping_predicate_uri (URIRef, optional): Object property to use as predicate to link. Defaults to ContentToBearingRelation.
+            method_object_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as objects of the mapping rules. Defaults to [OA.Annotation,CSVW.Column].
+            subjects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the data metadata. Defaults to [].
+            objects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the knowledge grph. Defaults to [].
+            maplist (List[Tuple[str, str]], optional): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for. Defaults to [].
+        """
         self.data_url = data_url
         self.method_url = method_url
         self.mapping_predicate_uri=mapping_predicate_uri
@@ -120,11 +148,20 @@ class Mapper:
             self.subjects = subjects
         self.maplist = maplist
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """String representation
+
+        Returns:
+            str: String representation
+        """
         return f"Mapper: {self.data_url} {self.method_url}"
 
-    def to_yaml(self):
-        # return filename and yaml file content
+    def to_yaml(self) -> dict:
+        """Return filename and yarrrml yaml file content
+
+        Returns:
+            dict: Dict with keys filename, suggested mapping file name and filedata, yarrrml mapping file yaml content
+        """
         return get_mapping_output(
             self.data_url,
             self.method_url,
@@ -134,7 +171,16 @@ class Mapper:
             )
 
 
-def get_data_informationbearingentities(data_url,entity_classes: List[URIRef]):
+def get_data_informationbearingentities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
+    """Get all named individuals at data_url location that are of any type in entitty_classes.
+
+    Args:
+        data_url (AnyUrl): Url to metadata to use
+        entity_classes (List[URIRef]): List of rdflib URIRef as class types to query for.
+
+    Returns:
+        dict: Dict with short entity IRI as key
+    """
     data=load_graph(data_url)
     info_lines = {s.split('/')[-1]: {
         'uri': str(s),
@@ -150,8 +196,16 @@ def get_data_informationbearingentities(data_url,entity_classes: List[URIRef]):
     return info_lines
 
 
-def get_methode_ices(method_url,entity_classes: List[URIRef]):
-    # get all types of classes for the given list of superclasses 
+def get_methode_ices(method_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
+    """Get all types of classes for the given list of superclasses 
+
+    Args:
+        method_url (AnyUrl): Url to knowledge graph to use
+        entity_classes (List[URIRef]): List of rdflib URIRef as class types to query for.
+
+    Returns:
+        dict: Dict with short entity IRI as key
+    """
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
     method=load_graph(method_url)
@@ -160,12 +214,24 @@ def get_methode_ices(method_url,entity_classes: List[URIRef]):
     return ices
 
 
-def get_mapping_output(data_url: str, method_url: str, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef):
+def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
+    """Get yaml definging the yarrrml mapping rules.
+
+    Args:
+        data_url (AnyUrl): Url to data metadata to use
+        method_url (AnyUrl): Url to knowledge graph to use
+        map_list (List): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for.
+        subjects_dict (dict): Dict of subjects to create mapping rules for with short entity IRI as key
+        mapping_predicate_uri (URIRef): Object property to use as predicate to link
+
+    Returns:
+        dict: _description_
+    """
     g=Graph()
     g.bind('method', Namespace( method_url+'/'))
     g.bind('data_url', Namespace( method_url+'/'))
     g.bind('obo', OBO)
-    
+    print(map_list)
     result = OrderedDict()
     result['prefixes'] = {'obo': str(OBO),
                           'data': data_url+'/',
@@ -208,4 +274,4 @@ def get_mapping_output(data_url: str, method_url: str, map_list: List, subjects_
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
     data = dump(result, Dumper=Dumper)
-    return filename, data
+    return {'filename':filename, 'filedata': data}

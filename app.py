@@ -167,11 +167,13 @@ def map():
     maplist = [(k, v) for k, v in temp.items() if v != 'None']
     session['maplist'] = maplist
     # print(maplist)
-    filename, result_string = maptomethod.Mapper(
+    result=maptomethod.Mapper(
         session.get('data_url', None),
         session.get('method_url', None),
         session.get('info_lines', None),
         maplist=maplist).to_yaml()
+    filename = result['filename']
+    result_string = result['filedata']
     b64 = base64.b64encode(result_string.encode())
     payload = b64.decode()
     return render_template(

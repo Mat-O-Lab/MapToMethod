@@ -1,4 +1,6 @@
 docker-compose.override.yml
+.vscode/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
