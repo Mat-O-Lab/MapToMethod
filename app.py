@@ -1,6 +1,7 @@
 import os
 import base64
 import uuid
+from wsgiref.validate import validator
 
 from config import config
 import flask
@@ -55,6 +56,14 @@ class StartForm(FlaskForm):
                      'from https://github.com/Mat-O-Lab/MSEO/tree/main/methods'
                      )
     )
+    data_data_subject_super_class_uris = FieldList(URLField('URI', validators=[Optional(), URL()]))
+    method_object_super_class_uris = FieldList(URLField('URI', validators=[Optional(), URL()]))
+    mapping_predicate_uri = URLField('URL Meta Data',
+        #validators=[DataRequired(),URL()],
+        render_kw={"placeholder": "http://purl.obolibrary.org/obo/RO_0010002"},
+        description='URI of object property to use as predicate to link.'
+        )
+    
 
 
 class SelectForm(FlaskForm):
