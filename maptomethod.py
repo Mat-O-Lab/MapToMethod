@@ -149,18 +149,9 @@ def get_data_informationbearingentities(data_url,entity_classes: List[URIRef]):
 
 
 def get_methode_ices(method_url,entity_classes: List[URIRef]):
-    # get all the ICE individuals in the method graph
-    ice_classes = get_all_sub_classes(InformtionContentEntity)
-    tr_classes = get_all_sub_classes(TemporalRegionClass)
-    class_list = ice_classes+tr_classes
-    print('oldschool\n')
-    print(len(class_list))
-    print(class_list[0])
+    # get all types of classes for the given list of superclasses 
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
-    print('newschool\n')
-    print(len(class_list))
-    print(class_list)
     method=load_graph(method_url)
     ices = {s.split('/')[-1]: s for s, p,
             o in method.triples((None,  RDF.type, None)) if o in class_list}
