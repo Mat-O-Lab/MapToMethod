@@ -14,3 +14,8 @@ webencodings==0.5.1
 WTForms==3.0.0
 gunicorn
 pydantic
+starlette
+starlette-wtf
+jinja2
+fastapi
+uvicorn

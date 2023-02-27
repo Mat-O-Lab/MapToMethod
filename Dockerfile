@@ -10,4 +10,7 @@ WORKDIR /src
 RUN curl https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.ttl > ./ontologies/mseo.ttl
 RUN curl https://raw.githubusercontent.com/CommonCoreOntology/CommonCoreOntologies/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl > ./ontologies/cco.ttl
 
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "wsgi:app", "--workers=3"]
+ENV PYTHONDONTWRITEBYTECODE 1
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED 1
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "6","--proxy-headers"]

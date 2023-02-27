@@ -68,6 +68,8 @@ def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
     """
     parsed_url=urlparse(url)
     format=guess_format(parsed_url.path)
+    print(url,format)
+    print(parsed_url.geturl())
     graph.parse(unquote(parsed_url.geturl()), format=format)
     return graph
 
@@ -99,7 +101,7 @@ def get_methods() -> Dict:
     """
     mseo_repo = github.Github().get_repo("Mat-O-Lab/MSEO")
     folder_index = mseo_repo.get_contents("methods")
-    print(folder_index)
+    #print(folder_index)
     if folder_index:
         methods_urls = [
             method.download_url for method in folder_index if method.download_url and method.download_url.endswith('ttl')]
