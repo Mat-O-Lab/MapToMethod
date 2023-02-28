@@ -2,34 +2,40 @@
 
 import os
 import base64
+from tkinter import Widget
 import uuid
-from wsgiref.validate import validator
 
-from config import config
 import uvicorn
 from starlette_wtf import StarletteForm
 from starlette.datastructures import FormData
 from starlette.responses import HTMLResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
-import starlette.status as status
+
 #from starlette.middleware.cors import CORSMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.concurrency import run_in_threadpool
 from typing import Optional, Any, List
 
-from pydantic import BaseSettings, BaseModel, AnyUrl, Field, Json
+from pydantic import BaseSettings, BaseModel, AnyUrl, Field
 
-from fastapi import Request, FastAPI, HTTPException
+from fastapi import Request, FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 
 from wtforms import URLField, SelectField, FieldList, FormField, Form
-from wtforms.validators import DataRequired, Optional, URL
+from wtforms.validators import Optional, URL
+from wtforms.widgets import ListWidget, html_params
+from markupsafe import Markup
+
 import logging
 from rdflib import URIRef
+
 import maptomethod
+
+if os.environ.get("APP_MODE")=='development':
+    logging.basicConfig(level=logging.DEBUG)
+
 
 class Settings(BaseSettings):
     app_name: str = "MaptoMethod"
@@ -43,7 +49,7 @@ settings = Settings()
 
 config_name = os.environ.get("APP_MODE") or "development"
 
-middleware = [Middleware(SessionMiddleware, secret_key='super-secret')]
+middleware = [Middleware(SessionMiddleware, secret_key=os.getenv("APP_SECRET", "your-secret"))]
 app = FastAPI(
     title=settings.app_name,
     description="Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.",
@@ -61,11 +67,11 @@ app = FastAPI(
     middleware=middleware
 )
 app.add_middleware(
-CORSMiddleware,
-allow_origins=["*"], # Allows all origins
-allow_credentials=True,
-allow_methods=["*"], # Allows all methods
-allow_headers=["*"], # Allows all headers
+    CORSMiddleware,
+    allow_origins=["*"], # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"], # Allows all methods
+    allow_headers=["*"], # Allows all headers
 )
 app.add_middleware(uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trusted_hosts="*")
 
@@ -85,41 +91,80 @@ templates.env.globals['get_flashed_messages'] = get_flashed_messages
 #app.methods_dict = maptomethod.get_methods()
 app.methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
+
+class ListWidgetBootstrap(ListWidget):
+    def __init__(self, html_tag="div", prefix_label=True, col_class=''):
+        assert html_tag in ("div", "a")
+        self.html_tag = html_tag
+        self.prefix_label = prefix_label
+        self.col_class=col_class
+
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault("id", field.id)
+        html = [f"<{self.html_tag} {html_params(**kwargs)}>"]
+        for subfield in field:
+            if self.prefix_label:
+                html.append(f"<div class={self.col_class}>{subfield.label} {subfield()}</div>")
+            else:
+                html.append(f"<div class={self.col_class}>{subfield()} {subfield.label}</div>")
+        html.append("</%s>" % self.html_tag)
+        return Markup("".join(html))
+
 class StartForm(StarletteForm):
     data_url = URLField('URL Meta Data',
         #validators=[DataRequired(),URL()],
-        render_kw={"placeholder": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json"},
+        render_kw={"placeholder": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+        "class":"form-control"},
         description='Paste URL to meta data json file create from CSVToCSVW'
-        )
+    )
     method_url = URLField(
         'URL Method Data',
+        render_kw={"class":"form-control"},
         validators=[Optional(), URL()],
         description='Paste URL to method graph create with MSEO',
     )
     method_sel = SelectField(
         'Method Graph',
+        render_kw={"class":"form-control"},
         choices=[(v, k) for k, v in app.methods_dict.items()],
         description=('Alternativly select a method graph'
                      'from https://github.com/Mat-O-Lab/MSEO/tree/main/methods'
                      )
     )
-    data_data_subject_super_class_uris = FieldList(URLField('URI', validators=[Optional(), URL()]))
-    method_object_super_class_uris = FieldList(URLField('URI', validators=[Optional(), URL()]))
-    mapping_predicate_uri = URLField('URL Meta Data',
+    data_data_subject_super_class_uris = FieldList(
+        URLField('URI', validators=[Optional(), URL()], 
+        render_kw={"class":"form-control"}),
+        min_entries=2,
+        widget=ListWidgetBootstrap(col_class='col-sm-6'),
+        render_kw={"class":"row"})
+    mapping_predicate_uri = URLField('URL Mapping Predicat',
         #validators=[DataRequired(),URL()],
-        render_kw={"placeholder": "http://purl.obolibrary.org/obo/RO_0010002"},
-        description='URI of object property to use as predicate to link.'
+        render_kw={
+            "placeholder": "http://purl.obolibrary.org/obo/RO_0010002",
+            "class":"form-control"
+            },
+        description='URI of object property to use as predicate.'
+        )
+    method_object_super_class_uris = FieldList(
+        URLField('URI', validators=[Optional(), URL()], 
+        render_kw={"class":"form-control"}),
+        min_entries=2,
+        widget=ListWidgetBootstrap(col_class='col-sm-6'),
+        render_kw={"class":"row"}
         )
     
 
-
 class SelectForm(Form):
     select = SelectField("Placeholder", default=(
-        0, "None"), choices=[], validate_choice=False)
-
+        0, "None"), choices=[], validate_choice=False, render_kw={"class":"form-control col-s-3"})
 
 class MappingFormList(Form):
-    items = FieldList(FormField(SelectForm))
+    assignments = FieldList(
+        FormField(SelectForm,
+        render_kw={"class":"form-control"}),
+        widget=ListWidgetBootstrap(col_class='col-sm-4'),
+        render_kw={"class":"row"}
+        )
 
 
 def get_select_entries(request, ice_list, info_list):
@@ -155,12 +200,18 @@ async def index(request: Request):
 @app.post("/create_mapper", response_class=HTMLResponse)
 async def create_mapper(request: Request):
     start_form = await StartForm.from_formdata(request)
+    mapping_form = ''
     if await start_form.validate_on_submit():
         if not start_form.data_url.data:
             start_form.data_url.data=start_form.data_url.render_kw['placeholder']
             flash(request,'URL Data File empty: using placeholder value for demonstration', 'info')
-            data_url = start_form.data_url.data
+        data_url = start_form.data_url.data
         request.session['data_url']=data_url
+        if not start_form.mapping_predicate_uri.data:
+            start_form.mapping_predicate_uri.data=start_form.mapping_predicate_uri.render_kw['placeholder']
+            flash(request,'URL mapping predicate uri empty: using placeholder value for demonstration', 'info')
+        mapping_predicate_uri = start_form.mapping_predicate_uri.data
+        request.session['mapping_predicate_uri']=mapping_predicate_uri
         
         # if url to method graph provided use it if not use select widget
         if start_form.method_url.data:
@@ -168,21 +219,25 @@ async def create_mapper(request: Request):
         else:
             method_url = start_form.method_sel.data
         request.session['method_url']=method_url
-        with maptomethod.Mapper(data_url=data_url, method_url=method_url) as mapper:
+        # try:
+        with maptomethod.Mapper(
+            data_url=data_url,
+            method_url=method_url,
+            mapping_predicate_uri=URIRef(mapping_predicate_uri)
+            ) as mapper:
                 info_choices = [(id, value['text']) for
                             id, value in mapper.subjects.items()]
                 info_choices.insert(0, (None, 'None'))
                 mapping_form = MappingFormList()
-                mapping_form.items = get_select_entries(
+                mapping_form.assignments = get_select_entries(
                     request,
                     mapper.objects.keys(),
                     info_choices
                 )
                 flash(request,str(mapper), 'info')
-        # flash(request,str(err),'error')
-        
-    else:
-        mapping_form = ''
+        # except Exception as err:
+        #     flash(request,str(err),'error')
+        print(mapping_form.assignments)
     return templates.TemplateResponse("index.html",
         {"request": request,
         "start_form": start_form,
@@ -222,104 +277,6 @@ async def map(request: Request):
         }
     )
 
-# @app.route("/", methods=["GET", "POST"])
-# def index():
-#     logo = './static/resources/MatOLab-Logo.svg'
-#     start_form = StartForm()
-#     mapping_form = MappingFormList()
-#     message = ''
-#     result = ''
-#     return render_template(
-#         "index.html",
-#         logo=logo,
-#         start_form=start_form,
-#         message=message,
-#         mapping_form=mapping_form,
-#         result=result
-#     )
-
-
-# @app.route('/create_mapper', methods=['POST'])
-# def create_mapper():
-#     logo = './static/resources/MatOLab-Logo.svg'
-#     start_form = StartForm()
-#     mapping_form = MappingFormList()
-#     message = ''
-#     result = ''
-#     # print(request.form)
-#     if start_form.validate_on_submit():
-#         # url valid now test if readable -metadata.json
-#         if not start_form.data_url.data:
-#             start_form.data_url.data=start_form.data_url.render_kw['placeholder']
-#             flash('URL Data File empty: using placeholder value for demonstration', 'info')
-#         data_url = start_form.data_url.data
-        
-#         # if url to method graph provided use it if not use select widget
-#         if start_form.method_url.data:
-#             method_url = start_form.method_url.data
-#         else:
-#             method_url = start_form.method_sel.data
-
-#         try:
-#             mapper = maptomethod.Mapper(
-#                 data_url=data_url, method_url=method_url)
-#         except (ValueError, TypeError) as err:
-#             flash(str(err),'error')
-#         else:
-#             flash(mapper, 'info')
-#             session['data_url'] = mapper.data_url
-#             session['method_url'] = mapper.method_url
-#             session['methode_ices'] = mapper.objects
-#             session['info_lines'] = mapper.subjects
-#             info_choices = [(id, value['text']) for
-#                             id, value in mapper.subjects.items()]
-#             info_choices.insert(0, (None, 'None'))
-#             mapping_form.items = get_select_entries(
-#                 session.get('methode_ices', None).keys(), info_choices)
-#     return render_template(
-#         "index.html",
-#         logo=logo,
-#         start_form=start_form,
-#         message=message,
-#         mapping_form=mapping_form,
-#         result=result
-#     )
-
-
-# @app.route('/map', methods=['POST'])
-# def map():
-#     logo = './static/resources/MatOLab-Logo.svg'
-#     start_form = StartForm(
-#         data_url=session.get('data_url', None),
-#         method_url=session.get('method_url', None),
-#         method_sel=session.get('method_url', None))
-#     #start_form = StartForm()
-#     message = ''
-#     temp = request.form.to_dict()
-#     temp.pop("csrf_token")
-#     maplist = [(k, v) for k, v in temp.items() if v != 'None']
-#     session['maplist'] = maplist
-#     # print(maplist)
-#     result=maptomethod.Mapper(
-#         session.get('data_url', None),
-#         session.get('method_url', None),
-#         session.get('info_lines', None),
-#         maplist=maplist).to_yaml()
-#     filename = result['filename']
-#     result_string = result['filedata']
-#     b64 = base64.b64encode(result_string.encode())
-#     payload = b64.decode()
-#     return render_template(
-#         "index.html",
-#         logo=logo,
-#         start_form=start_form,
-#         message=message,
-#         mapping_form=None,
-#         result=result_string,
-#         filename=filename,
-#         payload=payload
-#     )
-
 class QueryRequest(BaseModel):
     url: AnyUrl = Field('', title='Graph Url', description='Url to the sematic dataset to query')
     entity_classes: List = Field([], title='Class List', description='List of super classes to query for',)
@@ -333,10 +290,6 @@ class QueryRequest(BaseModel):
                     ]
             }
         }
-
-
-from rdflib import URIRef
-
 
 @app.post("/api/subjects")
 def informationcontententities(request: QueryRequest):
@@ -391,9 +344,7 @@ if __name__ == "__main__":
     if app_mode=='development':
         reload=True
         access_log=True
-        logging.basicConfig(level=logging.DEBUG)
     else:
         reload=False
         access_log=False
-        logging.basicConfig(level=logging.ERROR)
     uvicorn.run("app:app",host="0.0.0.0",port=port, reload=reload, access_log=access_log)

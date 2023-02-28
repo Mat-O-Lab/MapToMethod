@@ -154,8 +154,9 @@ class Mapper:
     def __enter__(self):
         return self
     def __exit__(self, exc_type, exc_value, traceback):
-        del self
-        gc.collect()
+        yield (exc_type, exc_value)
+        # del self
+        # gc.collect()
     def __str__(self) -> str:
         """String representation
 

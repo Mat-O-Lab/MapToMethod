@@ -28,10 +28,10 @@
       <p class="col-md-12 ps-0 fs-4">Tool to map content of JSON-LD files (output of <a href="https://github.com/Mat-O-Lab/CSVToCSVW">CSVToCSVW</a>) that describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at <a href="https://github.com/Mat-O-Lab/MSEO">github.com/Mat-O-Lab/MSEO</a>.
       </p>
       <form class='pb-3' method="POST" action="{{ url_for('create_mapper') }}">
-        <div class="mb-3">
-          {{ start_form.csrf_token }}
-          {% for item in start_form if item.widget.input_type != 'hidden' %}
-            {{ item.label}} {{ item(class="form-control") }}
+        {{ start_form.csrf_token }}
+        {% for item in start_form if item.widget.input_type != 'hidden' %}
+          <div class="row mb-3">
+            {{ item.label}} {{ item }}
             <div class="invalid-feedback">
               {% if item.errors %}
                   <ul class="errors">
@@ -42,35 +42,34 @@
               {% endif %}
             </div>
             <div id="methodHelp" class="form-text">{{ item.description }}</div>
+          </div>
         {% endfor %}
         <button class="form-group btn btn-primary btn-lg mt-3" type="submit">Start Mapping</button>
-        </div>
       </form>
     </div>
-    {% if mapping_form.items %}
+    {% if mapping_form %}
     <div class="container-fluid collapse pb-3 {% if mapping_form %} show {% endif %}" id="mappingForm">
       <div class="card card-body">
         <h5 class="card-title">Mapping Dialog</h5>
         <h6 class="card-subtitle mb-2 text-muted">Map Information Line and Colum Entities of the Meta Data File against the Information Content Entities of the Method Graph</h6>
-        <form method="POST" action="{{ url_for('map') }}">
-          <div class="row">
-            {{ mapping_form.csrf_token }}
-            {% for item in mapping_form.items %}
-            <div class="col-sm-3">
-                {{ item.select.label }} {{ item.select(class="form-control") }}
-                <div class="invalid-feedback">
-                  {% if item.errors %}
-                      <ul class="errors">
-                      {% for error in item.errors %}
-                          <li>{{ error }}</li>
-                      {% endfor %}
-                      </ul>
-                  {% endif %}
-                </div>
+        <form class='pb-3' method="POST" action="{{ url_for('map') }}">
+          {{ mapping_form.csrf_token }}
+          {% for item in mapping_form if item.widget.input_type != 'hidden' %}
+            <div class="row mb-3">
+              {{ item.label}} {{ item }}
+              <div class="invalid-feedback">
+                {% if item.errors %}
+                    <ul class="errors">
+                    {% for error in item.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+              </div>
+              <div id="methodHelp" class="form-text">{{ item.description }}</div>
             </div>
-            {% endfor %}
-          </div>
-          <button class="form-group btn btn-primary btn-lg mt-3" type="submit">Create Mapping</button>
+          {% endfor %}
+        <button class="form-group btn btn-primary btn-lg mt-3" type="submit">Create Mapping</button>
         </form>
       </div>
     </div>
