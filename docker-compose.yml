@@ -3,7 +3,7 @@ services:
     maptomethod:
       image: ghcr.io/mat-o-lab/maptomethod:latest
       environment:
-        APP_MODE: "development"
+        APP_MODE: "production"
       container_name: maptomethod
       ports:
         - ${APP_PORT}:5000

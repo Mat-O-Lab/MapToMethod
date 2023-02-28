@@ -8,9 +8,11 @@ from wsgiref.validate import validator
 from config import config
 import uvicorn
 from starlette_wtf import StarletteForm
+from starlette.datastructures import FormData
 from starlette.responses import HTMLResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+import starlette.status as status
 #from starlette.middleware.cors import CORSMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
@@ -21,12 +23,11 @@ from pydantic import BaseSettings, BaseModel, AnyUrl, Field, Json
 from fastapi import Request, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
-from wtforms import URLField, SelectField, FieldList, FormField
+from wtforms import URLField, SelectField, FieldList, FormField, Form
 from wtforms.validators import DataRequired, Optional, URL
 import logging
-
 from rdflib import URIRef
 import maptomethod
 
@@ -55,7 +56,8 @@ app = FastAPI(
     openapi_url=settings.openapi_url,
     docs_url=settings.docs_url,
     redoc_url=None,
-    swagger_ui_parameters= {'syntaxHighlight': False},
+    #to disable highlighting for large output
+    #swagger_ui_parameters= {'syntaxHighlight': False},
     middleware=middleware
 )
 app.add_middleware(
@@ -70,10 +72,18 @@ app.add_middleware(uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trus
 app.mount("/static/", StaticFiles(directory='static', html=True), name="static")
 templates= Jinja2Templates(directory="templates")
 
+#flash integration flike flask flash
+def flash(request: Request, message: Any, category: str = "info") -> None:
+    if "_messages" not in request.session:
+        request.session["_messages"] = []
+    request.session["_messages"].append({"message": message, "category": category})
+
+def get_flashed_messages(request: Request):
+    return request.session.pop("_messages") if "_messages" in request.session else []
+templates.env.globals['get_flashed_messages'] = get_flashed_messages
+
 #app.methods_dict = maptomethod.get_methods()
 app.methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
-
-logging.basicConfig(level=logging.DEBUG)
 
 class StartForm(StarletteForm):
     data_url = URLField('URL Meta Data',
@@ -103,16 +113,16 @@ class StartForm(StarletteForm):
     
 
 
-class SelectForm(StarletteForm):
+class SelectForm(Form):
     select = SelectField("Placeholder", default=(
         0, "None"), choices=[], validate_choice=False)
 
 
-class MappingFormList(StarletteForm):
+class MappingFormList(Form):
     items = FieldList(FormField(SelectForm))
 
 
-def get_select_entries(ice_list, info_list):
+def get_select_entries(request, ice_list, info_list):
     """
     Converts custom metadata to a forms.SelectForm(), which can then be
     used by SelectFormlist() to dynamically render select items.
@@ -122,14 +132,95 @@ def get_select_entries(ice_list, info_list):
     all_select_items = []
     for ice in ice_list:
         _id = uuid.uuid1()   # allows for multiple selects
-        select_entry = SelectForm()
-        select_entry.select.label = ice
-        select_entry.select.name = ice
-        select_entry.select.id = f"{ice}-{_id}"
-        select_entry.select.choices = info_list
-        all_select_items.append(select_entry)
+        select_form = SelectForm()
+        select_form.select.label = ice
+        select_form.select.name = ice
+        select_form.select.id = f"{ice}-{_id}"
+        select_form.select.choices = info_list
+        all_select_items.append(select_form)
     return all_select_items
 
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    start_form = await StartForm.from_formdata(request)
+    return templates.TemplateResponse("index.html",
+        {"request": request,
+        "start_form": start_form,
+        "mapping_form": '',
+        "result": ''
+        }
+    )
+
+
+@app.post("/create_mapper", response_class=HTMLResponse)
+async def create_mapper(request: Request):
+    start_form = await StartForm.from_formdata(request)
+    if await start_form.validate_on_submit():
+        if not start_form.data_url.data:
+            start_form.data_url.data=start_form.data_url.render_kw['placeholder']
+            flash(request,'URL Data File empty: using placeholder value for demonstration', 'info')
+            data_url = start_form.data_url.data
+        request.session['data_url']=data_url
+        
+        # if url to method graph provided use it if not use select widget
+        if start_form.method_url.data:
+            method_url = start_form.method_url.data
+        else:
+            method_url = start_form.method_sel.data
+        request.session['method_url']=method_url
+        with maptomethod.Mapper(data_url=data_url, method_url=method_url) as mapper:
+                info_choices = [(id, value['text']) for
+                            id, value in mapper.subjects.items()]
+                info_choices.insert(0, (None, 'None'))
+                mapping_form = MappingFormList()
+                mapping_form.items = get_select_entries(
+                    request,
+                    mapper.objects.keys(),
+                    info_choices
+                )
+                flash(request,str(mapper), 'info')
+        # flash(request,str(err),'error')
+        
+    else:
+        mapping_form = ''
+    return templates.TemplateResponse("index.html",
+        {"request": request,
+        "start_form": start_form,
+        "mapping_form": mapping_form,
+        "result": ''
+        }
+    )
+
+@app.post("/map", response_class=HTMLResponse)
+async def map(request: Request):
+    formdata = await request.form()
+    data_url=request.session.get('data_url', None)
+    method_url=request.session.get('method_url', None)
+    method_sel=request.session.get('method_url', None)
+    start_form = StartForm(request,
+        data_url=data_url,
+        method_url=method_url,
+        method_sel=method_sel)
+    result = ''
+    payload = ''
+    select_dict=dict(formdata)
+    maplist = [(k, v) for k, v in select_dict.items() if v != 'None']
+    request.session['maplist'] = maplist
+    with maptomethod.Mapper(data_url=data_url, method_url=method_url,maplist=maplist) as mapper:
+        result=mapper.to_pretty_yaml()
+        filename = result['filename']
+        result_string = result['filedata']
+        b64 = base64.b64encode(result_string.encode())
+        payload = b64.decode()
+    return templates.TemplateResponse("index.html",
+        {"request": request,
+        "start_form": start_form,
+        "mapping_form": '',
+        'filename': filename,
+        'payload': payload,
+        "result": result_string
+        }
+    )
 
 # @app.route("/", methods=["GET", "POST"])
 # def index():
@@ -287,7 +378,6 @@ def mapping(request: MappingRequest):
         request.method_url,
         maplist=request.map_list.items()
     ).to_yaml()
-    # return jsonify({"filename": filename, "filedata": file_data})
     return result
 
 @app.get("/info", response_model=Settings)
@@ -301,7 +391,9 @@ if __name__ == "__main__":
     if app_mode=='development':
         reload=True
         access_log=True
+        logging.basicConfig(level=logging.DEBUG)
     else:
         reload=False
         access_log=False
+        logging.basicConfig(level=logging.ERROR)
     uvicorn.run("app:app",host="0.0.0.0",port=port, reload=reload, access_log=access_log)

@@ -14,6 +14,7 @@ from rdflib.plugins.sparql import prepareQuery
 from rdflib.util import guess_format
 import github
 from urllib.parse import urlparse, unquote
+import gc
 
 # disable ssl verification
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -68,8 +69,8 @@ def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
     """
     parsed_url=urlparse(url)
     format=guess_format(parsed_url.path)
-    print(url,format)
-    print(parsed_url.geturl())
+    #print(url,format)
+    #print(parsed_url.geturl())
     graph.parse(unquote(parsed_url.geturl()), format=format)
     return graph
 
@@ -149,7 +150,12 @@ class Mapper:
         else:
             self.subjects = subjects
         self.maplist = maplist
-
+    #methods for context managers
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_value, traceback):
+        del self
+        gc.collect()
     def __str__(self) -> str:
         """String representation
 
@@ -171,6 +177,11 @@ class Mapper:
             self.subjects,
             self.mapping_predicate_uri
             )
+    def to_pretty_yaml(self) -> str:
+        result=self.to_yaml()
+        result['filedata'] = dump(result['filedata'], Dumper=Dumper)
+        return result
+
 
 
 def get_data_informationbearingentities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
@@ -275,5 +286,6 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
-    data = dump(result, Dumper=Dumper)
+    #data = dump(result, Dumper=Dumper)
+    data=result
     return {'filename':filename, 'filedata': data}
