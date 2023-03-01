@@ -1,5 +1,6 @@
 # app.py
 
+from dataclasses import fields
 import os
 import base64
 from tkinter import Widget
@@ -103,10 +104,19 @@ class ListWidgetBootstrap(ListWidget):
         kwargs.setdefault("id", field.id)
         html = [f"<{self.html_tag} {html_params(**kwargs)}>"]
         for subfield in field:
-            if self.prefix_label:
-                html.append(f"<div class={self.col_class}>{subfield.label} {subfield()}</div>")
+            # if subfield we have to traverse once more down
+            if isinstance(subfield,Form):
+                for subsubfield in subfield:
+                    if self.prefix_label:
+                        html.append(f"<div class={self.col_class}>{subsubfield.label} {subsubfield()}</div>")
+                    else:
+                        html.append(f"<div class={self.col_class}>{subsubfield()} {subsubfield.label}</div>")
+            # print(dir(subfield))
             else:
-                html.append(f"<div class={self.col_class}>{subfield()} {subfield.label}</div>")
+                if self.prefix_label:
+                    html.append(f"<div class={self.col_class}>{subfield.label} {subfield()}</div>")
+                else:
+                    html.append(f"<div class={self.col_class}>{subfield()} {subfield.label}</div>")
         html.append("</%s>" % self.html_tag)
         return Markup("".join(html))
 
@@ -158,16 +168,17 @@ class SelectForm(Form):
     select = SelectField("Placeholder", default=(
         0, "None"), choices=[], validate_choice=False, render_kw={"class":"form-control col-s-3"})
 
-class MappingFormList(Form):
+
+class MappingFormList(StarletteForm):
     assignments = FieldList(
         FormField(SelectForm,
         render_kw={"class":"form-control"}),
         widget=ListWidgetBootstrap(col_class='col-sm-4'),
-        render_kw={"class":"row"}
+        render_kw={"class":"row"},
         )
 
 
-def get_select_entries(request, ice_list, info_list):
+def get_select_entries(ice_list, info_list):
     """
     Converts custom metadata to a forms.SelectForm(), which can then be
     used by SelectFormlist() to dynamically render select items.
@@ -184,6 +195,8 @@ def get_select_entries(request, ice_list, info_list):
         select_form.select.choices = info_list
         all_select_items.append(select_form)
     return all_select_items
+
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -219,25 +232,24 @@ async def create_mapper(request: Request):
         else:
             method_url = start_form.method_sel.data
         request.session['method_url']=method_url
-        # try:
-        with maptomethod.Mapper(
-            data_url=data_url,
-            method_url=method_url,
-            mapping_predicate_uri=URIRef(mapping_predicate_uri)
-            ) as mapper:
-                info_choices = [(id, value['text']) for
-                            id, value in mapper.subjects.items()]
-                info_choices.insert(0, (None, 'None'))
-                mapping_form = MappingFormList()
-                mapping_form.assignments = get_select_entries(
-                    request,
-                    mapper.objects.keys(),
-                    info_choices
-                )
-                flash(request,str(mapper), 'info')
-        # except Exception as err:
-        #     flash(request,str(err),'error')
-        print(mapping_form.assignments)
+        try:
+            with maptomethod.Mapper(
+                data_url=data_url,
+                method_url=method_url,
+                mapping_predicate_uri=URIRef(mapping_predicate_uri)
+                ) as mapper:
+                    info_choices = [(id, value['text']) for
+                                id, value in mapper.subjects.items()]
+                    info_choices.insert(0, (None, 'None'))
+                    select_forms = get_select_entries(
+                        mapper.objects.keys(),
+                        info_choices
+                    )
+                    flash(request,str(mapper), 'info')
+        except Exception as err:
+            flash(request,str(err),'error')
+        mapping_form=await MappingFormList.from_formdata(request)
+        mapping_form.assignments.entries=select_forms
     return templates.TemplateResponse("index.html",
         {"request": request,
         "start_form": start_form,

@@ -30,8 +30,8 @@
       <form class='pb-3' method="POST" action="{{ url_for('create_mapper') }}">
         {{ start_form.csrf_token }}
         {% for item in start_form if item.widget.input_type != 'hidden' %}
-          <div class="row mb-3">
-            {{ item.label}} {{ item }}
+          <div class="mb-3">
+            {{ item.label(class="form-label")}} {{ item }}
             <div class="invalid-feedback">
               {% if item.errors %}
                   <ul class="errors">
@@ -48,13 +48,13 @@
       </form>
     </div>
     {% if mapping_form %}
-    <div class="container-fluid collapse pb-3 {% if mapping_form %} show {% endif %}" id="mappingForm">
+    <div class="container-fluid collapse p-0 pb-3 {% if mapping_form %} show {% endif %}" id="mappingForm">
       <div class="card card-body">
         <h5 class="card-title">Mapping Dialog</h5>
         <h6 class="card-subtitle mb-2 text-muted">Map Information Line and Colum Entities of the Meta Data File against the Information Content Entities of the Method Graph</h6>
         <form class='pb-3' method="POST" action="{{ url_for('map') }}">
           {{ mapping_form.csrf_token }}
-          {% for item in mapping_form if item.widget.input_type != 'hidden' %}
+          {% for item in mapping_form %}
             <div class="row mb-3">
               {{ item.label}} {{ item }}
               <div class="invalid-feedback">
