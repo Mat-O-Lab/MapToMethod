@@ -3,12 +3,10 @@
 from dataclasses import fields
 import os
 import base64
-from tkinter import Widget
 import uuid
 
 import uvicorn
 from starlette_wtf import StarletteForm
-from starlette.datastructures import FormData
 from starlette.responses import HTMLResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -19,7 +17,7 @@ from typing import Optional, Any, List
 
 from pydantic import BaseSettings, BaseModel, AnyUrl, Field
 
-from fastapi import Request, FastAPI
+from fastapi import Request, FastAPI, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -33,9 +31,6 @@ import logging
 from rdflib import URIRef
 
 import maptomethod
-
-if os.environ.get("APP_MODE")=='development':
-    logging.basicConfig(level=logging.DEBUG)
 
 
 class Settings(BaseSettings):
@@ -79,6 +74,14 @@ app.add_middleware(uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trus
 app.mount("/static/", StaticFiles(directory='static', html=True), name="static")
 templates= Jinja2Templates(directory="templates")
 
+if os.environ.get("APP_MODE")=='development':
+    logging.basicConfig(level=logging.DEBUG)
+    app.methods_dict={'DIN_EN_ISO_527': 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
+
+else:
+    app.methods_dict = maptomethod.get_methods()
+
+
 #flash integration flike flask flash
 def flash(request: Request, message: Any, category: str = "info") -> None:
     if "_messages" not in request.session:
@@ -88,9 +91,6 @@ def flash(request: Request, message: Any, category: str = "info") -> None:
 def get_flashed_messages(request: Request):
     return request.session.pop("_messages") if "_messages" in request.session else []
 templates.env.globals['get_flashed_messages'] = get_flashed_messages
-
-#app.methods_dict = maptomethod.get_methods()
-app.methods_dict={'DIN_EN_ISO_527': 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
 
 class ListWidgetBootstrap(ListWidget):
@@ -207,7 +207,6 @@ def get_select_entries(ice_list, info_list):
     return all_select_items
 
 
-
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     start_form = await StartForm.from_formdata(request)
@@ -284,6 +283,8 @@ async def map(request: Request):
         method_url=method_url,
         method_sel=method_sel)
     result = ''
+    filename = ''
+    result_string= ''
     payload = ''
     select_dict=dict(formdata)
     maplist = [(k, v) for k, v in select_dict.items() if v != 'None']
@@ -307,26 +308,44 @@ async def map(request: Request):
 class QueryRequest(BaseModel):
     url: AnyUrl = Field('', title='Graph Url', description='Url to the sematic dataset to query')
     entity_classes: List = Field([], title='Class List', description='List of super classes to query for',)
-    class Config:
-        schema_extra = {
-            "example": {
-                "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
-                "entity_classes": [
-                    'http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity', #cco:InformationContentEntity
-                    'http://purl.obolibrary.org/obo/BFO_0000008' # bfo:temporal region
-                    ]
-            }
-        }
 
 @app.post("/api/subjects")
-def informationcontententities(request: QueryRequest):
+def informationbearingentities(request: QueryRequest= Body(
+        examples={
+                "normal": {
+                    "summary": "A normal example",
+                    "description": "A **normal** item works correctly.",
+                    "value": {
+                        "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+                        "entity_classes": [
+                            "http://www.w3.org/ns/csvw#Column",
+                            "http://www.w3.org/ns/oa#Annotation"
+                        ]
+                    },
+                },
+        }
+    )):
     #translate urls in entity_classes list to URIRef objects
     request.entity_classes=[ URIRef(url) for url in request.entity_classes]
     return maptomethod.get_data_informationbearingentities(request.url, request.entity_classes)
 
 
 @app.post("/api/objects")
-def informationcontententities(request: QueryRequest):
+def informationcontententities(request: QueryRequest= Body(
+        examples={
+                "normal": {
+                    "summary": "A normal example",
+                    "description": "A **normal** item works correctly.",
+                    "value": {
+                        "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+                        "entity_classes": [
+                            'http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity', #cco:InformationContentEntity
+                            'http://purl.obolibrary.org/obo/BFO_0000008' # bfo:temporal region
+                            ]
+                    },
+                },
+        }
+    )):
     #translate urls in entity_classes list to URIRef objects
     request.entity_classes=[ URIRef(url) for url in request.entity_classes]
     return maptomethod.get_methode_ices(request.url, request.entity_classes)

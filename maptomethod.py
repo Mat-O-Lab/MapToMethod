@@ -9,12 +9,25 @@ from yaml.representer import SafeRepresenter
 from yaml.resolver import BaseResolver
 
 from rdflib import Graph, URIRef, Namespace
-from rdflib.namespace import RDF, RDFS
+from rdflib.namespace import CSVW, RDF, RDFS, DefinedNamespaceMeta
+
+import sys, inspect
+def get_rdflib_Namespaces():
+    class_dict={}
+    for name, obj in inspect.getmembers(sys.modules['rdflib.namespace']):
+        if inspect.isclass(obj):
+            if isinstance(obj , DefinedNamespaceMeta):
+                try:
+                    class_dict[str(name)]={'uri': str(obj), 'src': str(obj)}
+                except:
+                    pass
+    return class_dict
+            
+
 from rdflib.plugins.sparql import prepareQuery
 from rdflib.util import guess_format
 import github
 from urllib.parse import urlparse, unquote
-import gc
 
 # disable ssl verification
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -37,25 +50,25 @@ sub_classes = prepareQuery(
 )
 
 # MSEO_URL='https://purl.matolab.org/mseo/mid'
-OBO = Namespace('http://purl.obolibrary.org/obo/')
+BFO = Namespace('http://purl.obolibrary.org/obo/')
+BFO_URL = "http://purl.obolibrary.org/obo/bfo.owl"
 MSEO_NAMESPACE = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
 #CCO_URL = 'https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
 MSEO_URL = './ontologies/mseo.ttl'
 CCO_URL = './ontologies/cco.ttl'
-
-
 MSEO = Namespace(MSEO_NAMESPACE)
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
-CSVW = Namespace('http://www.w3.org/ns/csvw#')
 OA = Namespace('http://www.w3.org/ns/oa#')
 
-mseo_graph = Graph()
-mseo_graph.parse(CCO_URL, format='turtle')
-mseo_graph.parse(MSEO_URL, format='turtle')
+ontologies=get_rdflib_Namespaces()
+ontologies['BFO']={'uri': str(BFO), 'src': BFO_URL}
+ontologies['MSEO']={'uri': str(MSEO_NAMESPACE), 'src': MSEO_URL}
+ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
+ontologies['OA']={'uri': str(OA), 'src': OA}
 
 InformtionContentEntity = CCO.InformationContentEntity
-TemporalRegionClass = OBO.BFO_0000008
-ContentToBearingRelation = OBO.RO_0010002
+TemporalRegionClass = BFO.BFO_0000008
+ContentToBearingRelation = BFO.RO_0010002
 
 def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
     """_summary_
@@ -69,10 +82,13 @@ def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
     """
     parsed_url=urlparse(url)
     format=guess_format(parsed_url.path)
-    #print(url,format)
+    if not format:
+        format='xml'
     #print(parsed_url.geturl())
     graph.parse(unquote(parsed_url.geturl()), format=format)
     return graph
+
+import re
 
 def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     """Gets all subclasses of a given class.
@@ -83,11 +99,15 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     Returns:
         List[URIRef]: List of all subclasses
     """
+    ontology_url=re.split(r'/|#', superclass[::-1],maxsplit=1)[-1][::-1]
+    #lookup in ontologies
+    result=[ (key, item['src']) for key,item in ontologies.items() if ontology_url in item['uri']]
+    ontology=load_graph(result[0][1])
     results = list(
-        mseo_graph.query(
+        ontology.query(
                 sub_classes,
                 initBindings={'parent': superclass},
-                initNs={'cco': CCO, 'mseo': MSEO},
+                #initNs={'cco': CCO, 'mseo': MSEO},
                 ),
             )
     classes = [result[0] for result in results]
@@ -223,8 +243,10 @@ def get_methode_ices(method_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
     method=load_graph(method_url)
+    # filters out entities not belonging to the graph directly
     ices = {s.split('/')[-1]: s for s, p,
-            o in method.triples((None,  RDF.type, None)) if o in class_list}
+            o in method.triples((None,  RDF.type, None)) if o in class_list and method_url in str(s)}
+    # filter for entities belonging to the graph only
     return ices
 
 
@@ -244,10 +266,9 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     g=Graph()
     g.bind('method', Namespace( method_url+'/'))
     g.bind('data_url', Namespace( method_url+'/'))
-    g.bind('obo', OBO)
-    print(map_list)
+    g.bind('bfo', BFO)
     result = OrderedDict()
-    result['prefixes'] = {'obo': str(OBO),
+    result['prefixes'] = {'obo': str(BFO),
                           'data': data_url+'/',
                           'method': method_url+'/'}
     result['base'] = 'http://purl.matolab.org/mseo/mappings/'
@@ -287,6 +308,5 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
           })
         # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
-    #data = dump(result, Dumper=Dumper)
     data=result
     return {'filename':filename, 'filedata': data}
