@@ -117,9 +117,9 @@ class Mapper:
             self,
             data_url: AnyUrl,
             method_url: AnyUrl,
-            data_subject_super_class_uris: List[URIRef] = [InformtionContentEntity,TemporalRegionClass],
+            method_object_super_class_uris: List[URIRef] = [InformtionContentEntity,TemporalRegionClass],
             mapping_predicate_uri: URIRef = ContentToBearingRelation,
-            method_object_super_class_uris: List[URIRef] = [OA.Annotation,CSVW.Column],
+            data_subject_super_class_uris: List[URIRef] = [OA.Annotation,CSVW.Column],
             subjects: List[URIRef]=[],
             objects: List[URIRef]=[],
             maplist: List[Tuple[str, str]]=[]
@@ -141,12 +141,12 @@ class Mapper:
         self.mapping_predicate_uri=mapping_predicate_uri
         #file_data, file_name =open_file(data_url)
         if not objects:
-            self.objects = get_methode_ices(self.method_url,data_subject_super_class_uris)
+            self.objects = get_methode_ices(self.method_url,method_object_super_class_uris)
         else:
             self.objects = objects
         if not subjects:
             self.subjects = get_data_informationbearingentities(
-                self.data_url,method_object_super_class_uris)
+                self.data_url,data_subject_super_class_uris)
         else:
             self.subjects = subjects
         self.maplist = maplist

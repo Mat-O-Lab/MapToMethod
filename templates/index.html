@@ -31,7 +31,14 @@
         {{ start_form.csrf_token }}
         {% for item in start_form if item.widget.input_type != 'hidden' %}
           <div class="mb-3">
-            {{ item.label(class="form-label")}} {{ item }}
+            {% if item.label.text=='Advanced' %} 
+            <button class="btn btn-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#{{item.id}}" aria-expanded="false" aria-controls="{{item.id}}">
+              {{item.label.text}}
+            </button>
+            {% else %}
+            {{ item.label(class="form-label")}}
+            {% endif %}
+            {{ item }}
             <div class="invalid-feedback">
               {% if item.errors %}
                   <ul class="errors">

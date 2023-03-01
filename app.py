@@ -120,6 +120,34 @@ class ListWidgetBootstrap(ListWidget):
         html.append("</%s>" % self.html_tag)
         return Markup("".join(html))
 
+
+
+class AdvancedForm(Form):
+    data_subject_super_class_uris = FieldList(
+        URLField('URI', validators=[Optional(), URL()], 
+        render_kw={"class":"form-control"}),
+        min_entries=2,
+        default=[maptomethod.OA.Annotation,maptomethod.CSVW.Column],
+        widget=ListWidgetBootstrap(col_class='col-sm-6'),
+        render_kw={"class":"row"},
+        description='URI of superclass to query for subjects in data.'
+        )
+    mapping_predicate_uri = URLField('URL Mapping Predicat',
+        #validators=[DataRequired(),URL()],
+        render_kw={"class":"form-control"},
+        default=maptomethod.ContentToBearingRelation,
+        description='URI of object property to use as predicate.'
+        )
+    method_object_super_class_uris = FieldList(
+        URLField('URI', validators=[Optional(), URL()], 
+        render_kw={"class":"form-control"}),
+        min_entries=2,
+        default=[maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass],
+        widget=ListWidgetBootstrap(col_class='col-sm-6'),
+        render_kw={"class":"row"},
+        description='URI of superclass to query for objects in methode.'
+        )
+
 class StartForm(StarletteForm):
     data_url = URLField('URL Meta Data',
         #validators=[DataRequired(),URL()],
@@ -141,27 +169,9 @@ class StartForm(StarletteForm):
                      'from https://github.com/Mat-O-Lab/MSEO/tree/main/methods'
                      )
     )
-    data_data_subject_super_class_uris = FieldList(
-        URLField('URI', validators=[Optional(), URL()], 
-        render_kw={"class":"form-control"}),
-        min_entries=2,
-        widget=ListWidgetBootstrap(col_class='col-sm-6'),
-        render_kw={"class":"row"})
-    mapping_predicate_uri = URLField('URL Mapping Predicat',
-        #validators=[DataRequired(),URL()],
-        render_kw={
-            "placeholder": "http://purl.obolibrary.org/obo/RO_0010002",
-            "class":"form-control"
-            },
-        description='URI of object property to use as predicate.'
-        )
-    method_object_super_class_uris = FieldList(
-        URLField('URI', validators=[Optional(), URL()], 
-        render_kw={"class":"form-control"}),
-        min_entries=2,
-        widget=ListWidgetBootstrap(col_class='col-sm-6'),
-        render_kw={"class":"row"}
-        )
+    advanced=FormField(AdvancedForm,
+        render_kw={"class":"collapse"},
+        widget=ListWidgetBootstrap())
     
 
 class SelectForm(Form):
@@ -220,11 +230,6 @@ async def create_mapper(request: Request):
             flash(request,'URL Data File empty: using placeholder value for demonstration', 'info')
         data_url = start_form.data_url.data
         request.session['data_url']=data_url
-        if not start_form.mapping_predicate_uri.data:
-            start_form.mapping_predicate_uri.data=start_form.mapping_predicate_uri.render_kw['placeholder']
-            flash(request,'URL mapping predicate uri empty: using placeholder value for demonstration', 'info')
-        mapping_predicate_uri = start_form.mapping_predicate_uri.data
-        request.session['mapping_predicate_uri']=mapping_predicate_uri
         
         # if url to method graph provided use it if not use select widget
         if start_form.method_url.data:
@@ -232,11 +237,21 @@ async def create_mapper(request: Request):
         else:
             method_url = start_form.method_sel.data
         request.session['method_url']=method_url
+        # entrys from advanced form
+        mapping_subject_class_uris = start_form.advanced.data_subject_super_class_uris.data
+        request.session['mapping_subject_class_uris']=mapping_subject_class_uris
+        mapping_predicate_uri = start_form.advanced.mapping_predicate_uri.data
+        request.session['mapping_predicate_uri']=mapping_predicate_uri
+        mapping_object_class_uris = start_form.advanced.method_object_super_class_uris.data
+        request.session['mapping_object_class_uris']=mapping_object_class_uris
+
         try:
             with maptomethod.Mapper(
                 data_url=data_url,
                 method_url=method_url,
-                mapping_predicate_uri=URIRef(mapping_predicate_uri)
+                mapping_predicate_uri = URIRef(mapping_predicate_uri),
+                data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
+                method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris]
                 ) as mapper:
                     info_choices = [(id, value['text']) for
                                 id, value in mapper.subjects.items()]
