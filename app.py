@@ -331,7 +331,7 @@ def informationbearingentities(request: QueryRequest= Body(
 
 
 @app.post("/api/objects")
-def informationcontententities(request: QueryRequest= Body(
+def informationcontententities(request: QueryRequest = Body(
         examples={
                 "normal": {
                     "summary": "A normal example",
@@ -355,23 +355,25 @@ class MappingRequest(BaseModel):
     data_url: AnyUrl = Field('', title='Graph Url', description='Url to data metadata to use.')
     method_url: AnyUrl = Field('', title='Graph Url', description='Url to knowledge graph to use.')
     map_list: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and labels of indivuals in data metadata as values to create mapping rules for.',)
-    class Config:
-        schema_extra = {
-            "example": {
-                "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
-                "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
-                "map_list": {
-                    "SpecimenName": "AktuelleProbe0",
-                    "StrainMeasurementInformation": "Dehnung"
-                }
-            }
-        }
-
 
 
 @app.post("/api/mapping")
-def mapping(request: MappingRequest):
-    # content = request.get_json()
+def mapping(request: MappingRequest = Body(
+        examples={
+                "normal": {
+                    "summary": "A normal example",
+                    "description": "A **normal** item works correctly.",
+                    "value": {
+                        "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+                        "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+                        "map_list": {
+                            "SpecimenName": "AktuelleProbe0",
+                            "StrainMeasurementInformation": "Dehnung"
+                        },
+                    },
+                },
+        }
+    )):
     result = maptomethod.Mapper(
         request.data_url,
         request.method_url,

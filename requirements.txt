@@ -1,14 +1,7 @@
-certifi==2021.10.8
-cffi
-chardet
-charset-normalizer
 PyGithub
-pyparsing
 PyYAML==3.13
 rdflib>=6.2.0
-webencodings==0.5.1
 WTForms
-gunicorn
 pydantic
 starlette
 starlette-wtf
