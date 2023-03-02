@@ -49,6 +49,16 @@ MSEO = Namespace('https://purl.matolab.org/mseo/mid')
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 OA = Namespace('http://www.w3.org/ns/oa#')
 
+def strip_namespace(term: URIRef) -> str:
+    """Strip the namespace from full URI
+
+    Args:
+        term (URIRef): A RDFlib Term
+
+    Returns:
+        str: short IRI
+    """
+    return re_split(r'/|#|:', term[::-1],maxsplit=1)[0][::-1]
 def get_rdflib_Namespaces() -> dict:
     """Get all the Namespaces available in rdflib.namespace.
 
@@ -79,7 +89,7 @@ def parse_graph(url: AnyUrl, graph: Graph) -> Graph:
     format=guess_format(parsed_url.path)
     if not format:
         format='xml'
-    #print(parsed_url.geturl())
+    print(parsed_url.geturl())
     graph.parse(unquote(parsed_url.geturl()), format=format)
     return graph
 
@@ -97,16 +107,18 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     result=[ (key, item['src']) for key,item in ontologies.items() if ontology_url in item['uri']]
     if result:
         ontology_url=result[0][1]
-    logging.info('Fetching all subclasses of {} in ontology at {}'.format(superclass,ontology_url))
-    ontology=parse_graph(ontology_url, graph = Graph())
-    results = list(
-        ontology.query(
-                sub_classes,
-                initBindings={'parent': superclass},
-                #initNs={'cco': CCO, 'mseo': MSEO},
-                ),
-            )
-    classes = [result[0] for result in results]
+        logging.info('Fetching all subclasses of {} in ontology at {}'.format(superclass,ontology_url))
+        ontology=parse_graph(ontology_url, graph = Graph())
+        results = list(
+            ontology.query(
+                    sub_classes,
+                    initBindings={'parent': superclass},
+                    #initNs={'cco': CCO, 'mseo': MSEO},
+                    ),
+                )
+        classes = [result[0] for result in results]
+    else:
+        classes=[superclass,]
     logging.info('Found following subclasses of {}: {}'.format(superclass,classes))
     return classes
 
@@ -135,6 +147,7 @@ ontologies['BFO']={'uri': str(BFO), 'src': BFO_URL}
 ontologies['MSEO']={'uri': str(MSEO), 'src': MSEO_URL}
 ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
 ontologies['OA']={'uri': str(OA), 'src': OA}
+ontologies['CSVW']['src']="https://www.w3.org/ns/csvw.ttl"
 
 InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = BFO.BFO_0000008
@@ -170,12 +183,11 @@ class Mapper:
         self.mapping_predicate_uri=mapping_predicate_uri
         #file_data, file_name =open_file(data_url)
         if not objects:
-            self.objects = get_methode_ices(self.method_url,method_object_super_class_uris)
+            self.objects = query_entities(self.method_url,method_object_super_class_uris)
         else:
             self.objects = objects
         if not subjects:
-            self.subjects = get_data_informationbearingentities(
-                self.data_url,data_subject_super_class_uris)
+            self.subjects = query_entities(self.data_url,data_subject_super_class_uris)
         else:
             self.subjects = subjects
         self.maplist = maplist
@@ -212,8 +224,8 @@ class Mapper:
 
 
 
-def get_data_informationbearingentities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
-    """Get all named individuals at data_url location that are of any type in entitty_classes.
+def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
+    """Get all named individuals at data_url location that are of any type in entity_classes.
 
     Args:
         data_url (AnyUrl): Url to metadata to use
@@ -222,39 +234,22 @@ def get_data_informationbearingentities(data_url: AnyUrl, entity_classes: List[U
     Returns:
         dict: Dict with short entity IRI as key
     """
-    data=parse_graph(data_url, graph = Graph())
-    info_lines = {s.split('/')[-1]: {
-        'uri': str(s),
-        'text':
-            str(data.value(s, RDFS.label)) if
-            data.value(s, RDFS.label) else
-            data.value(s, CSVW.title),
-        'property': 'label' if data.value(s, RDFS.label) else
-        'titles'}
-        for s, p, o in data.triples((None,  RDF.type, None)) if
-        o in entity_classes
-        }
-    return info_lines
-
-
-def get_methode_ices(method_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
-    """Get all types of classes for the given list of superclasses 
-
-    Args:
-        method_url (AnyUrl): Url to knowledge graph to use
-        entity_classes (List[URIRef]): List of rdflib URIRef as class types to query for.
-
-    Returns:
-        dict: Dict with short entity IRI as key
-    """
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
-    method=parse_graph(method_url, graph = Graph())
-    # filters out entities not belonging to the graph directly
-    ices = {s.split('/')[-1]: s for s, p,
-            o in method.triples((None,  RDF.type, None)) if o in class_list}
-    # filter for entities belonging to the graph only
-    return ices
+    data=parse_graph(data_url, graph = Graph())
+    data_entities=dict()
+    subjects=[s for s, p, o in data.triples((None,  RDF.type, None)) if o in class_list]
+    for s in subjects:
+        pos=[ (p, o) for (p, o) in data.predicate_objects(s) if p in [RDFS.label, CSVW.title]]
+        if pos:
+            p, o = pos[0]
+            data_entities[s.split('/')[-1]]={
+                'uri': str(s),
+                'property': strip_namespace(p),
+                'text': o}
+        else:
+            data_entities[s.split('/')[-1]]={'uri': str(s)}
+    return data_entities
 
 def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
     """Get yaml definging the yarrrml mapping rules.
@@ -273,6 +268,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     g.bind('method', Namespace( method_url+'/'))
     g.bind('data_url', Namespace( data_url+'/'))
     g.bind('bfo', BFO)
+    g.bind('csvw', CSVW)
     prefixes={prefix: str(url) for (prefix, url) in g.namespaces()}
     result = OrderedDict()
     result['prefixes'] = prefixes

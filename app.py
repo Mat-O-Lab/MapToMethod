@@ -190,12 +190,12 @@ class QueryRequest(BaseModel):
     url: AnyUrl = Field('', title='Graph Url', description='Url to the sematic dataset to query')
     entity_classes: List = Field([], title='Class List', description='List of super classes to query for',)
 
-@app.post("/api/subjects")
-def informationbearingentities(request: QueryRequest= Body(
+@app.post("/api/entities")
+def query_entities(request: QueryRequest= Body(
         examples={
-                "normal": {
-                    "summary": "A normal example",
-                    "description": "A **normal** item works correctly.",
+                "data": {
+                    "summary": "Query of csvw data json-ld",
+                    "description": "Querys of csvw data json-ld for given set of superclasses",
                     "value": {
                         "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "entity_classes": [
@@ -204,19 +204,9 @@ def informationbearingentities(request: QueryRequest= Body(
                         ]
                     },
                 },
-        }
-    )):
-    #translate urls in entity_classes list to URIRef objects
-    request.entity_classes=[ URIRef(url) for url in request.entity_classes]
-    return maptomethod.get_data_informationbearingentities(request.url, request.entity_classes)
-
-
-@app.post("/api/objects")
-def informationcontententities(request: QueryRequest = Body(
-        examples={
-                "normal": {
-                    "summary": "A normal example",
-                    "description": "A **normal** item works correctly.",
+                "methode": {
+                    "summary": "Query of methode graph entitie",
+                    "description": "Querys of methode graph for given set of superclasses",
                     "value": {
                         "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
                         "entity_classes": [
@@ -229,7 +219,8 @@ def informationcontententities(request: QueryRequest = Body(
     )):
     #translate urls in entity_classes list to URIRef objects
     request.entity_classes=[ URIRef(url) for url in request.entity_classes]
-    return maptomethod.get_methode_ices(request.url, request.entity_classes)
+    return maptomethod.query_entities(request.url, request.entity_classes)
+
 
 
 class MappingRequest(BaseModel):
