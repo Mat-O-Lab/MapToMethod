@@ -28,6 +28,7 @@ from wtforms.widgets import ListWidget, html_params
 from markupsafe import Markup
 
 import logging
+
 from rdflib import URIRef
 
 import maptomethod
@@ -57,7 +58,7 @@ app = FastAPI(
     },
     openapi_url=settings.openapi_url,
     docs_url=settings.docs_url,
-    redoc_url=None,
+    redoc_url=None,    
     #to disable highlighting for large output
     #swagger_ui_parameters= {'syntaxHighlight': False},
     middleware=middleware
@@ -75,12 +76,10 @@ app.mount("/static/", StaticFiles(directory='static', html=True), name="static")
 templates= Jinja2Templates(directory="templates")
 
 if os.environ.get("APP_MODE")=='development':
-    logging.basicConfig(level=logging.DEBUG)
     app.methods_dict={'DIN_EN_ISO_527': 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
 
 else:
     app.methods_dict = maptomethod.get_methods()
-
 
 #flash integration flike flask flash
 def flash(request: Request, message: Any, category: str = "info") -> None:
@@ -207,7 +206,7 @@ def get_select_entries(ice_list, info_list):
     return all_select_items
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
     start_form = await StartForm.from_formdata(request)
     return templates.TemplateResponse("index.html",
@@ -219,10 +218,11 @@ async def index(request: Request):
     )
 
 
-@app.post("/create_mapper", response_class=HTMLResponse)
+@app.post("/create_mapper", response_class=HTMLResponse, include_in_schema=False)
 async def create_mapper(request: Request):
     start_form = await StartForm.from_formdata(request)
     mapping_form = ''
+    logging.info('create mapping')
     if await start_form.validate_on_submit():
         if not start_form.data_url.data:
             start_form.data_url.data=start_form.data_url.render_kw['placeholder']
@@ -272,7 +272,7 @@ async def create_mapper(request: Request):
         }
     )
 
-@app.post("/map", response_class=HTMLResponse)
+@app.post("/map", response_class=HTMLResponse, include_in_schema=False)
 async def map(request: Request):
     formdata = await request.form()
     data_url=request.session.get('data_url', None)
@@ -385,14 +385,21 @@ def mapping(request: MappingRequest = Body(
 async def info() -> dict:
     return settings
 
+import yaml
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app_mode=os.environ.get("APP_MODE") or 'production'
+    with open('log_config.yml') as f:
+        config = yaml.load(f)
+        logging.config.dictConfig(config)
     if app_mode=='development':
         reload=True
         access_log=True
+        config['root']['level']='DEBUG'
     else:
         reload=False
         access_log=False
-    uvicorn.run("app:app",host="0.0.0.0",port=port, reload=reload, access_log=access_log)
+        config['root']['level']='ERROR'
+    print('Log Level Set To {}'.format(config['root']['level']))
+    uvicorn.run("app:app",host="0.0.0.0",port=port, reload=reload, access_log=access_log,log_config=config)

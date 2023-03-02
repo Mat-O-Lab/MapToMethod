@@ -10,6 +10,7 @@ from yaml.resolver import BaseResolver
 
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import CSVW, RDF, RDFS, DefinedNamespaceMeta
+import logging
 
 import sys, inspect
 def get_rdflib_Namespaces():
@@ -21,6 +22,7 @@ def get_rdflib_Namespaces():
                     class_dict[str(name)]={'uri': str(obj), 'src': str(obj)}
                 except:
                     pass
+    logging.info('Found the following build in ontology namespaces in rdflib: {}'.format(class_dict.keys()))
     return class_dict
             
 
