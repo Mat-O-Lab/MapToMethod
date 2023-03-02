@@ -280,16 +280,11 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     result['base'] = 'http://purl.matolab.org/mseo/mappings/'
     # data_file should be url at best
     result['sources'] = {
-        'data_notes': {
+        'data_entities': {
           'access': data_url,
           'referenceFormulation': 'jsonpath',
-          'iterator': '$.notes[*]'
-          },
-        'data_columns': {
-          'access': data_url,
-          'referenceFormulation': 'jsonpath',
-          'iterator': '$.tableSchema.columns[*]'
-          },
+          'iterator': '$..[*]'
+          }
         }
     result['mappings'] = OrderedDict()
 
@@ -300,7 +295,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
         compare_string = str(_il['text'])
 
         result['mappings'][ice_key] = OrderedDict({
-          'sources': ['data_notes', 'data_columns'],
+          'sources': ['data_entities'],
           's': 'data:$(@id)',
           'condition': {
               'function': 'equal',

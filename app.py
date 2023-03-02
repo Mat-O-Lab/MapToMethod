@@ -8,7 +8,6 @@ from starlette.responses import HTMLResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 
-#from starlette.middleware.cors import CORSMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, List
 

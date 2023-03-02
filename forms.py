@@ -8,9 +8,6 @@ from markupsafe import Markup
 from typing import List
 import uuid
 
-
-
-
 import maptomethod
 
 class ListWidgetBootstrap(ListWidget):
