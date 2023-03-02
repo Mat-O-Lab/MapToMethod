@@ -1,25 +1,3 @@
 {
-  "ExperimentDate": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ExperimentDate",
-  "ExperimentDateIdentifier": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ExperimentDateIdentifier",
-  "ForceMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ForceMeasurementInformation",
-  "LenghtMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/LenghtMeasurementInformation",
-  "LoadCellIdentifer": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/LoadCellIdentifer",
-  "MaxStrainMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/MaxStrainMeasurementInformation",
-  "OperatorName": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/OperatorName",
-  "SpecimenName": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/SpecimenName",
-  "Standard": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/Standard",
-  "StandardIdentifier": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StandardIdentifier",
-  "StartLenghtMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StartLenghtMeasurementInformation",
-  "StrainMaxForce": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StrainMaxForce",
-  "StrainMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StrainMeasurementInformation",
-  "StressMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/StressMeasurementInformation",
-  "TensileStrenghtMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TensileStrenghtMeasurementInformation",
-  "TestMachineIdentifer": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestMachineIdentifer",
-  "TestPlan": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestPlan",
-  "TestPlanName": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestPlanName",
-  "TestTimeInterval": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestTimeInterval",
-  "ThicknessMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ThicknessMeasurementInformation",
-  "TimeOfBreak": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TimeOfBreak",
-  "TimeOfMaxStress": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TimeOfMaxStress",
-  "WidthMeasurementInformation": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/WidthMeasurementInformation"
+  "detail": "Not Found"
 }
