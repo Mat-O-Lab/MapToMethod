@@ -23,11 +23,11 @@ jobs:
           docker-compose up -d
           sleep 10
           docker ps -a
-      - name: create YARRRML mapping
+      - name: list entities
         working-directory: ${{env.WORKING_DIR}}
         run: |
           curl -X 'POST' \
-          'http://localhost:5005/api/entities' \
+          'http://localhost:${{env.APP_PORT}}/api/entities' \
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
@@ -37,7 +37,7 @@ jobs:
             "http://www.w3.org/ns/oa#Annotation"
           ]}' | jq . > bearingentities.json
           curl -X 'POST' \
-          'http://localhost:5005/api/entities' \
+          'http://localhost:${{env.APP_PORT}}/api/entities' \
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
@@ -46,11 +46,18 @@ jobs:
             "http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity",
             "http://purl.obolibrary.org/obo/BFO_0000008"
           ]}'| jq . > contententities.json
-          RESULT=$(curl -X POST "http://localhost:5005/api/mapping" -H  "accept: application/json" -H  "accept: application/json" -H  "Content-Type: application/json" -d @request.json)
-          FILEDATA=$(echo $RESULT | jq -r '.filedata')
-          FILENAME=$(echo $RESULT | jq -r '.filename')
-          echo $FILENAME
-          jq . <<< "$FILEDATA" > $FILENAME
+      - name: create YARRRML mapping
+        working-directory: ${{env.WORKING_DIR}}
+        run: |
+          RESULT="$(curl -X 'POST' \
+            'http://localhost:${{env.APP_PORT}}/api/mappingfile' \
+            -H 'accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d @request.json -v --connect-timeout 5)"
+          FILENAME=$(echo "$RESULT" | jq -r '.filename')
+          YAMLDATA="$(jq .filedata <<< "$RESULT")"
+          #remove quots
+          echo -e "${YAMLDATA:1:-1}" > $FILENAME
           #docker logs maptomethod
       - name: Commit files # commit the output folder
         uses: EndBug/add-and-commit@v9
