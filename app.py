@@ -206,9 +206,9 @@ def query_entities(request: QueryRequest= Body(
                         ]
                     },
                 },
-                "methode": {
-                    "summary": "Query of methode graph entitie",
-                    "description": "Querys of methode graph for given set of superclasses",
+                "method": {
+                    "summary": "Query of method graph entities",
+                    "description": "Querys of method graph for given set of superclasses",
                     "value": {
                         "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
                         "entity_classes": [
@@ -235,8 +235,8 @@ class MappingRequest(BaseModel):
 def mapping(request: MappingRequest = Body(
         examples={
                 "normal": {
-                    "summary": "A normal example",
-                    "description": "A **normal** item works correctly.",
+                    "summary": "A simple mapping example",
+                    "description": "Creates a very simple mapping file with one rule.",
                     "value": {
                         "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",

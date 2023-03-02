@@ -62,7 +62,7 @@ class AdvancedForm(Form):
         default=[maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass],
         widget=ListWidgetBootstrap(col_class='col-sm-6'),
         render_kw={"class":"row"},
-        description='URI of superclass to query for objects in methode.'
+        description='URI of superclass to query for objects in method.'
         )
 
 class StartForm(StarletteForm):
