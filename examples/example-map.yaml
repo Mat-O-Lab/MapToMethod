@@ -6,15 +6,8 @@ prefixes: {bfo: 'http://purl.obolibrary.org/obo/', csvw: 'http://www.w3.org/ns/c
   xsd: 'http://www.w3.org/2001/XMLSchema#'}
 base: http://purl.matolab.org/mseo/mappings/
 sources:
-  data_entities:
-    access: !!python/object/new:pydantic.networks.AnyUrl
-      args: ['https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json']
-      state: !!python/tuple
-      - null
-      - {fragment: null, host: github.com, host_type: domain, password: null, path: /Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json,
-        port: null, query: null, scheme: https, tld: com, user: null}
-    iterator: $..[*]
-    referenceFormulation: jsonpath
+  data_entities: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
+    iterator: '$..[*]', referenceFormulation: jsonpath}
 mappings:
   SpecimenName:
     sources: [data_entities]
