@@ -26,8 +26,26 @@ jobs:
       - name: create YARRRML mapping
         working-directory: ${{env.WORKING_DIR}}
         run: |
-          curl -X 'GET' 'http://localhost:5005/api/informationbearingentities?url=${{env.DATA_URL}}' -H 'accept: */*' | jq . > bearingentities.json
-          curl -X 'GET' 'http://localhost:5005/api/informationcontententities?url=${{env.METHOD_URL}}' -H 'accept: */*'| jq . > contententities.json
+          curl -X 'POST' \
+          'http://localhost:5005/api/entities' \
+          -H 'accept: application/json' \
+          -H 'Content-Type: application/json' \
+          -d '{
+          "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+          "entity_classes": [
+            "http://www.w3.org/ns/csvw#Column",
+            "http://www.w3.org/ns/oa#Annotation"
+          ]}' | jq . > bearingentities.json
+          curl -X 'POST' \
+          'http://localhost:5005/api/entities' \
+          -H 'accept: application/json' \
+          -H 'Content-Type: application/json' \
+          -d '{
+          "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+          "entity_classes": [
+            "http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity",
+            "http://purl.obolibrary.org/obo/BFO_0000008"
+          ]}'| jq . > contententities.json
           RESULT="$(curl -X 'POST' \
             'http://localhost:5005/api/mappingfile' \
             -H 'accept: application/json' \
