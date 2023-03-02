@@ -168,6 +168,7 @@ async def map(request: Request):
     payload = ''
     select_dict=dict(formdata)
     maplist = [(k, v) for k, v in select_dict.items() if v != 'None']
+    logging.info('Creating mapping file for mapping list: {}'.format(maplist))
     request.session['maplist'] = maplist
     with maptomethod.Mapper(data_url=data_url, method_url=method_url,maplist=maplist) as mapper:
         result=mapper.to_pretty_yaml()
