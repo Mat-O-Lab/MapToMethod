@@ -10,8 +10,8 @@ RUN pip install --no-cache-dir -r /requirements.txt
 ADD . /src
 WORKDIR /src
 # get ontologies
-RUN curl https://github.com/Mat-O-Lab/MSEO/raw/main/MSEO_mid.ttl > ./ontologies/mseo.ttl
-RUN curl https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl > ./ontologies/cco.ttl
+RUN curl https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl > ./ontologies/mseo.ttl
+RUN curl https://raw.githubusercontent.com/CommonCoreOntology/CommonCoreOntologies/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl > ./ontologies/cco.ttl
 
 ENV PYTHONDONTWRITEBYTECODE 1
 # Turns off buffering for easier container logging
