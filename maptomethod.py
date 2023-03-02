@@ -271,7 +271,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     """
     g=Graph()
     g.bind('method', Namespace( method_url+'/'))
-    g.bind('data_url', Namespace( method_url+'/'))
+    g.bind('data_url', Namespace( data_url+'/'))
     g.bind('bfo', BFO)
     prefixes={prefix: str(url) for (prefix, url) in g.namespaces()}
     result = OrderedDict()
