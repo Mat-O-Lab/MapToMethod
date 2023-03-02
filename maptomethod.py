@@ -277,7 +277,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     # data_file should be url at best
     result['sources'] = {
         'data_entities': {
-          'access': data_url,
+          'access': str(data_url),
           'referenceFormulation': 'jsonpath',
           'iterator': '$..[*]'
           }
