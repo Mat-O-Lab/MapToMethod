@@ -174,6 +174,8 @@ async def map(request: Request):
         result=mapper.to_pretty_yaml()
         filename = result['filename']
         result_string = result['filedata']
+        print(type(result_string))
+        print(result_string)
         b64 = base64.b64encode(result_string.encode())
         payload = b64.decode()
     return templates.TemplateResponse("index.html",
@@ -250,7 +252,7 @@ def mapping(request: MappingRequest = Body(
         request.data_url,
         request.method_url,
         maplist=request.map_list.items()
-    ).to_yaml()
+    ).to_pretty_yaml()
     return result
 
 @app.get("/info", response_model=Settings)

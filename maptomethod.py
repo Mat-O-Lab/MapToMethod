@@ -210,13 +210,14 @@ class Mapper:
         Returns:
             dict: Dict with keys filename, suggested mapping file name and filedata, yarrrml mapping file yaml content
         """
-        return get_mapping_output(
+        results = get_mapping_output(
             self.data_url,
             self.method_url,
             self.maplist,
             self.subjects,
             self.mapping_predicate_uri
             )
+        return results
     def to_pretty_yaml(self) -> str:
         result=self.to_yaml()
         result['filedata'] = dump(result['filedata'], Dumper=Dumper)

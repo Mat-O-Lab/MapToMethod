@@ -96,7 +96,7 @@
     <div class="container-fluid collapse pb-3 {% if result %} show {% endif %}" id="results">
       <div class="card card-body">
         <h5 class="card-title">Result</h5>
-        <code class="prettyprint" style="white-space: pre-wrap;">{{ result }}</code>
+        <code class="prettyprint lang-yaml" style="white-space: pre-wrap;">{{ result }}</code>
       </div>
       <a class="form-group btn btn-primary btn-lg my-3" download="{{ filename }}" href="data:text/json;base64,{{ payload }}" role="button">Download</a>
     </div>
