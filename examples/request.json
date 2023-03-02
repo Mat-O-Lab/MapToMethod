@@ -3,6 +3,14 @@
     "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
     "maplist": {
         "SpecimenName": "AktuelleProbe0",
-        "StrainMeasurementInformation": "Dehnung"
+        "StrainMeasurementInformation": "Dehnung",
+        "ExperimentDateIdentifier": "Datum15", 
+        "StartLenghtMeasurementInformation": "Einspannlaenge1", 
+        "StrainMaxForce": "DehnungBeiFmax9", 
+        "WidthMeasurementInformation": "ProbenbreiteB03", 
+        "ThicknessMeasurementInformation": "ProbendickeA04", 
+        "ForceMeasurementInformation": "Standardkraft", 
+        "StressMeasurementInformation": "Dehnung", 
+        "LenghtMeasurementInformation": "Standardweg"
     }
 }

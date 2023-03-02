@@ -3,13 +3,19 @@ services:
     maptomethod:
       image: ghcr.io/mat-o-lab/maptomethod:latest
       environment:
-        - APP_MODE=development
+        APP_MODE: "production"
+        APP_SECRET: ${APP_SECRET}
       container_name: maptomethod
       ports:
         - ${APP_PORT}:5000
       restart: always
       networks:
         maptomethod_net:
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5000/info"]
+        interval: 10s
+        timeout: 10s
+        retries: 20
 networks:
   maptomethod_net:
     name: maptomethod_net
