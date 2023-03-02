@@ -1,4 +1,6 @@
 from re import search as re_search
+from re import split as re_split
+
 import ssl
 from collections import OrderedDict
 from pydantic import AnyUrl
@@ -47,7 +49,12 @@ MSEO = Namespace('https://purl.matolab.org/mseo/mid')
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 OA = Namespace('http://www.w3.org/ns/oa#')
 
-def get_rdflib_Namespaces():
+def get_rdflib_Namespaces() -> dict:
+    """Get all the Namespaces available in rdflib.namespace.
+
+    Returns:
+        dict: Namespaces Dict with prefix as key a dict with uri and src as value.  
+    """
     class_dict={}
     for name, obj in inspect.getmembers(sys.modules['rdflib.namespace']):
         if inspect.isclass(obj):
@@ -58,28 +65,16 @@ def get_rdflib_Namespaces():
                     pass
     return class_dict
 
-ontologies=get_rdflib_Namespaces()
-ontologies['BFO']={'uri': str(BFO), 'src': BFO_URL}
-ontologies['MSEO']={'uri': str(MSEO), 'src': MSEO_URL}
-ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
-ontologies['OA']={'uri': str(OA), 'src': OA}
-
-InformtionContentEntity = CCO.InformationContentEntity
-TemporalRegionClass = BFO.BFO_0000008
-ContentToBearingRelation = BFO.RO_0010002
-
-def load_graph(url: AnyUrl, graph: Graph) -> Graph:
-    """_summary_
+def parse_graph(url: AnyUrl, graph: Graph) -> Graph:
+    """Parse a Graph from web url to rdflib graph object
 
     Args:
         url (AnyUrl): Url to an web ressource
-        graph (Graph, optional): Existing Rdflib Graph object to parse data to. Defaults to Graph().
+        graph (Graph): Existing Rdflib Graph object to parse data to.
 
     Returns:
         Graph: Rdflib graph Object
     """
-    #graph=Graph()
-    print(graph)
     parsed_url=urlparse(url)
     format=guess_format(parsed_url.path)
     if not format:
@@ -87,8 +82,6 @@ def load_graph(url: AnyUrl, graph: Graph) -> Graph:
     #print(parsed_url.geturl())
     graph.parse(unquote(parsed_url.geturl()), format=format)
     return graph
-
-import re
 
 def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     """Gets all subclasses of a given class.
@@ -99,13 +92,13 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     Returns:
         List[URIRef]: List of all subclasses
     """
-    ontology_url=re.split(r'/|#', superclass[::-1],maxsplit=1)[-1][::-1]
+    ontology_url=re_split(r'/|#', superclass[::-1],maxsplit=1)[-1][::-1]
     #lookup in ontologies
     result=[ (key, item['src']) for key,item in ontologies.items() if ontology_url in item['uri']]
     if result:
         ontology_url=result[0][1]
     logging.info('Fetching all subclasses of {} in ontology at {}'.format(superclass,ontology_url))
-    ontology=load_graph(ontology_url, graph = Graph())
+    ontology=parse_graph(ontology_url, graph = Graph())
     results = list(
         ontology.query(
                 sub_classes,
@@ -132,9 +125,20 @@ def get_methods() -> Dict:
             method.download_url for method in folder_index if method.download_url and method.download_url.endswith('ttl')]
         methods = {re_search('[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))', url)
                    [0].split('.')[0]: url for url in methods_urls}
-        return methods
     else:
-        return None
+        methods={}
+    logging.info('Following methods are available as select: {}'.format(methods))
+    return methods
+
+ontologies=get_rdflib_Namespaces()
+ontologies['BFO']={'uri': str(BFO), 'src': BFO_URL}
+ontologies['MSEO']={'uri': str(MSEO), 'src': MSEO_URL}
+ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
+ontologies['OA']={'uri': str(OA), 'src': OA}
+
+InformtionContentEntity = CCO.InformationContentEntity
+TemporalRegionClass = BFO.BFO_0000008
+ContentToBearingRelation = BFO.RO_0010002
 
 class Mapper:
     def __init__(
@@ -180,8 +184,6 @@ class Mapper:
         return self
     def __exit__(self, exc_type, exc_value, traceback):
         yield (exc_type, exc_value)
-        # del self
-        # gc.collect()
     def __str__(self) -> str:
         """String representation
 
@@ -220,7 +222,7 @@ def get_data_informationbearingentities(data_url: AnyUrl, entity_classes: List[U
     Returns:
         dict: Dict with short entity IRI as key
     """
-    data=load_graph(data_url, graph = Graph())
+    data=parse_graph(data_url, graph = Graph())
     info_lines = {s.split('/')[-1]: {
         'uri': str(s),
         'text':
@@ -247,13 +249,12 @@ def get_methode_ices(method_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     """
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
-    method=load_graph(method_url, graph = Graph())
+    method=parse_graph(method_url, graph = Graph())
     # filters out entities not belonging to the graph directly
     ices = {s.split('/')[-1]: s for s, p,
             o in method.triples((None,  RDF.type, None)) if o in class_list}
     # filter for entities belonging to the graph only
     return ices
-
 
 def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
     """Get yaml definging the yarrrml mapping rules.
@@ -266,7 +267,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
         mapping_predicate_uri (URIRef): Object property to use as predicate to link
 
     Returns:
-        dict: _description_
+        dict: Dict with key filename with value the sugested mapping filenaem and filedata with value the string content of the generated yarrrml yaml file.
     """
     g=Graph()
     g.bind('method', Namespace( method_url+'/'))

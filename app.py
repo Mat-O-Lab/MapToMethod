@@ -1,19 +1,16 @@
 # app.py
 
-from dataclasses import fields
 import os
 import base64
-import uuid
 
 import uvicorn
-from starlette_wtf import StarletteForm
 from starlette.responses import HTMLResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 
 #from starlette.middleware.cors import CORSMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional, Any, List
+from typing import Any, List
 
 from pydantic import BaseSettings, BaseModel, AnyUrl, Field
 
@@ -22,17 +19,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
-from wtforms import URLField, SelectField, FieldList, FormField, Form
-from wtforms.validators import Optional, URL
-from wtforms.widgets import ListWidget, html_params
-from markupsafe import Markup
-
 import logging
-
 from rdflib import URIRef
 
 import maptomethod
-
+import forms
 
 class Settings(BaseSettings):
     app_name: str = "MaptoMethod"
@@ -89,126 +80,14 @@ def flash(request: Request, message: Any, category: str = "info") -> None:
 
 def get_flashed_messages(request: Request):
     return request.session.pop("_messages") if "_messages" in request.session else []
+
 templates.env.globals['get_flashed_messages'] = get_flashed_messages
-
-
-class ListWidgetBootstrap(ListWidget):
-    def __init__(self, html_tag="div", prefix_label=True, col_class=''):
-        assert html_tag in ("div", "a")
-        self.html_tag = html_tag
-        self.prefix_label = prefix_label
-        self.col_class=col_class
-
-    def __call__(self, field, **kwargs):
-        kwargs.setdefault("id", field.id)
-        html = [f"<{self.html_tag} {html_params(**kwargs)}>"]
-        for subfield in field:
-            # if subfield we have to traverse once more down
-            if isinstance(subfield,Form):
-                for subsubfield in subfield:
-                    if self.prefix_label:
-                        html.append(f"<div class={self.col_class}>{subsubfield.label} {subsubfield()}</div>")
-                    else:
-                        html.append(f"<div class={self.col_class}>{subsubfield()} {subsubfield.label}</div>")
-            # print(dir(subfield))
-            else:
-                if self.prefix_label:
-                    html.append(f"<div class={self.col_class}>{subfield.label} {subfield()}</div>")
-                else:
-                    html.append(f"<div class={self.col_class}>{subfield()} {subfield.label}</div>")
-        html.append("</%s>" % self.html_tag)
-        return Markup("".join(html))
-
-
-
-class AdvancedForm(Form):
-    data_subject_super_class_uris = FieldList(
-        URLField('URI', validators=[Optional(), URL()], 
-        render_kw={"class":"form-control"}),
-        min_entries=2,
-        default=[maptomethod.OA.Annotation,maptomethod.CSVW.Column],
-        widget=ListWidgetBootstrap(col_class='col-sm-6'),
-        render_kw={"class":"row"},
-        description='URI of superclass to query for subjects in data.'
-        )
-    mapping_predicate_uri = URLField('URL Mapping Predicat',
-        #validators=[DataRequired(),URL()],
-        render_kw={"class":"form-control"},
-        default=maptomethod.ContentToBearingRelation,
-        description='URI of object property to use as predicate.'
-        )
-    method_object_super_class_uris = FieldList(
-        URLField('URI', validators=[Optional(), URL()], 
-        render_kw={"class":"form-control"}),
-        min_entries=2,
-        default=[maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass],
-        widget=ListWidgetBootstrap(col_class='col-sm-6'),
-        render_kw={"class":"row"},
-        description='URI of superclass to query for objects in methode.'
-        )
-
-class StartForm(StarletteForm):
-    data_url = URLField('URL Meta Data',
-        #validators=[DataRequired(),URL()],
-        render_kw={"placeholder": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
-        "class":"form-control"},
-        description='Paste URL to meta data json file create from CSVToCSVW'
-    )
-    method_url = URLField(
-        'URL Method Data',
-        render_kw={"class":"form-control"},
-        validators=[Optional(), URL()],
-        description='Paste URL to method graph create with MSEO',
-    )
-    method_sel = SelectField(
-        'Method Graph',
-        render_kw={"class":"form-control"},
-        choices=[(v, k) for k, v in app.methods_dict.items()],
-        description=('Alternativly select a method graph'
-                     'from https://github.com/Mat-O-Lab/MSEO/tree/main/methods'
-                     )
-    )
-    advanced=FormField(AdvancedForm,
-        render_kw={"class":"collapse"},
-        widget=ListWidgetBootstrap())
-    
-
-class SelectForm(Form):
-    select = SelectField("Placeholder", default=(
-        0, "None"), choices=[], validate_choice=False, render_kw={"class":"form-control col-s-3"})
-
-
-class MappingFormList(StarletteForm):
-    assignments = FieldList(
-        FormField(SelectForm,
-        render_kw={"class":"form-control"}),
-        widget=ListWidgetBootstrap(col_class='col-sm-4'),
-        render_kw={"class":"row"},
-        )
-
-
-def get_select_entries(ice_list, info_list):
-    """
-    Converts custom metadata to a forms.SelectForm(), which can then be
-    used by SelectFormlist() to dynamically render select items.
-
-    :return: <forms.SelectForm object>
-    """
-    all_select_items = []
-    for ice in ice_list:
-        _id = uuid.uuid1()   # allows for multiple selects
-        select_form = SelectForm()
-        select_form.select.label = ice
-        select_form.select.name = ice
-        select_form.select.id = f"{ice}-{_id}"
-        select_form.select.choices = info_list
-        all_select_items.append(select_form)
-    return all_select_items
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
-    start_form = await StartForm.from_formdata(request)
+    start_form = await forms.StartForm.from_formdata(request)
+    start_form.method_sel.choices=[(v, k) for k, v in app.methods_dict.items()]
     return templates.TemplateResponse("index.html",
         {"request": request,
         "start_form": start_form,
@@ -220,7 +99,8 @@ async def index(request: Request):
 
 @app.post("/create_mapper", response_class=HTMLResponse, include_in_schema=False)
 async def create_mapper(request: Request):
-    start_form = await StartForm.from_formdata(request)
+    start_form = await forms.StartForm.from_formdata(request)
+    start_form.method_sel.choices=[(v, k) for k, v in app.methods_dict.items()]
     mapping_form = ''
     logging.info('create mapping')
     if await start_form.validate_on_submit():
@@ -244,25 +124,25 @@ async def create_mapper(request: Request):
         mapping_object_class_uris = start_form.advanced.method_object_super_class_uris.data
         request.session['mapping_object_class_uris']=mapping_object_class_uris
 
-        try:
-            with maptomethod.Mapper(
-                data_url=data_url,
-                method_url=method_url,
-                mapping_predicate_uri = URIRef(mapping_predicate_uri),
-                data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
-                method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris]
-                ) as mapper:
-                    info_choices = [(id, value['text']) for
-                                id, value in mapper.subjects.items()]
-                    info_choices.insert(0, (None, 'None'))
-                    select_forms = get_select_entries(
-                        mapper.objects.keys(),
-                        info_choices
-                    )
-                    flash(request,str(mapper), 'info')
-        except Exception as err:
-            flash(request,str(err),'error')
-        mapping_form=await MappingFormList.from_formdata(request)
+        # try:
+        with maptomethod.Mapper(
+            data_url=data_url,
+            method_url=method_url,
+            mapping_predicate_uri = URIRef(mapping_predicate_uri),
+            data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
+            method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris]
+            ) as mapper:
+            info_choices = [(id, value['text']) for
+                        id, value in mapper.subjects.items()]
+            info_choices.insert(0, (None, 'None'))
+            select_forms = forms.get_select_entries(
+                mapper.objects.keys(),
+                info_choices
+            )
+            flash(request,str(mapper), 'info')
+        # except Exception as err:
+        #     flash(request,str(err),'error')
+        mapping_form=await forms.MappingFormList.from_formdata(request)
         mapping_form.assignments.entries=select_forms
     return templates.TemplateResponse("index.html",
         {"request": request,
@@ -278,10 +158,11 @@ async def map(request: Request):
     data_url=request.session.get('data_url', None)
     method_url=request.session.get('method_url', None)
     method_sel=request.session.get('method_url', None)
-    start_form = StartForm(request,
+    start_form = forms.StartForm(request,
         data_url=data_url,
         method_url=method_url,
         method_sel=method_sel)
+    start_form.method_sel.choices=[(v, k) for k, v in app.methods_dict.items()]
     result = ''
     filename = ''
     result_string= ''
