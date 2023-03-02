@@ -11,19 +11,7 @@ from yaml.resolver import BaseResolver
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import CSVW, RDF, RDFS, DefinedNamespaceMeta
 import logging
-
 import sys, inspect
-def get_rdflib_Namespaces():
-    class_dict={}
-    for name, obj in inspect.getmembers(sys.modules['rdflib.namespace']):
-        if inspect.isclass(obj):
-            if isinstance(obj , DefinedNamespaceMeta):
-                try:
-                    class_dict[str(name)]={'uri': str(obj), 'src': str(obj)}
-                except:
-                    pass
-    logging.info('Found the following build in ontology namespaces in rdflib: {}'.format(class_dict.keys()))
-    return class_dict
             
 
 from rdflib.plugins.sparql import prepareQuery
@@ -51,20 +39,28 @@ sub_classes = prepareQuery(
     "SELECT ?entity WHERE {?entity rdfs:subClassOf* ?parent}"
 )
 
-# MSEO_URL='https://purl.matolab.org/mseo/mid'
 BFO = Namespace('http://purl.obolibrary.org/obo/')
 BFO_URL = "http://purl.obolibrary.org/obo/bfo.owl"
-MSEO_NAMESPACE = 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/MSEO_mid.owl'
-#CCO_URL = 'https://github.com/CommonCoreOntology/CommonCoreOntologies/raw/master/cco-merged/MergedAllCoreOntology-v1.3-2021-03-01.ttl'
 MSEO_URL = './ontologies/mseo.ttl'
 CCO_URL = './ontologies/cco.ttl'
-MSEO = Namespace(MSEO_NAMESPACE)
+MSEO = Namespace('https://purl.matolab.org/mseo/mid')
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 OA = Namespace('http://www.w3.org/ns/oa#')
 
+def get_rdflib_Namespaces():
+    class_dict={}
+    for name, obj in inspect.getmembers(sys.modules['rdflib.namespace']):
+        if inspect.isclass(obj):
+            if isinstance(obj , DefinedNamespaceMeta):
+                try:
+                    class_dict[str(name)]={'uri': str(obj), 'src': str(obj)}
+                except:
+                    pass
+    return class_dict
+
 ontologies=get_rdflib_Namespaces()
 ontologies['BFO']={'uri': str(BFO), 'src': BFO_URL}
-ontologies['MSEO']={'uri': str(MSEO_NAMESPACE), 'src': MSEO_URL}
+ontologies['MSEO']={'uri': str(MSEO), 'src': MSEO_URL}
 ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
 ontologies['OA']={'uri': str(OA), 'src': OA}
 
@@ -72,7 +68,7 @@ InformtionContentEntity = CCO.InformationContentEntity
 TemporalRegionClass = BFO.BFO_0000008
 ContentToBearingRelation = BFO.RO_0010002
 
-def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
+def load_graph(url: AnyUrl, graph: Graph) -> Graph:
     """_summary_
 
     Args:
@@ -82,6 +78,8 @@ def load_graph(url: AnyUrl,graph: Graph=Graph()) -> Graph:
     Returns:
         Graph: Rdflib graph Object
     """
+    #graph=Graph()
+    print(graph)
     parsed_url=urlparse(url)
     format=guess_format(parsed_url.path)
     if not format:
@@ -104,7 +102,10 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     ontology_url=re.split(r'/|#', superclass[::-1],maxsplit=1)[-1][::-1]
     #lookup in ontologies
     result=[ (key, item['src']) for key,item in ontologies.items() if ontology_url in item['uri']]
-    ontology=load_graph(result[0][1])
+    if result:
+        ontology_url=result[0][1]
+    logging.info('Fetching all subclasses of {} in ontology at {}'.format(superclass,ontology_url))
+    ontology=load_graph(ontology_url, graph = Graph())
     results = list(
         ontology.query(
                 sub_classes,
@@ -113,6 +114,7 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
                 ),
             )
     classes = [result[0] for result in results]
+    logging.info('Found following subclasses of {}: {}'.format(superclass,classes))
     return classes
 
 
@@ -158,6 +160,7 @@ class Mapper:
             objects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the knowledge grph. Defaults to [].
             maplist (List[Tuple[str, str]], optional): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for. Defaults to [].
         """
+        logging.info('Following Namespaces available to Mapper: {}'.format(ontologies.keys()))
         self.data_url = data_url
         self.method_url = method_url
         self.mapping_predicate_uri=mapping_predicate_uri
@@ -217,7 +220,7 @@ def get_data_informationbearingentities(data_url: AnyUrl, entity_classes: List[U
     Returns:
         dict: Dict with short entity IRI as key
     """
-    data=load_graph(data_url)
+    data=load_graph(data_url, graph = Graph())
     info_lines = {s.split('/')[-1]: {
         'uri': str(s),
         'text':
@@ -244,10 +247,10 @@ def get_methode_ices(method_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     """
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
-    method=load_graph(method_url)
+    method=load_graph(method_url, graph = Graph())
     # filters out entities not belonging to the graph directly
     ices = {s.split('/')[-1]: s for s, p,
-            o in method.triples((None,  RDF.type, None)) if o in class_list and method_url in str(s)}
+            o in method.triples((None,  RDF.type, None)) if o in class_list}
     # filter for entities belonging to the graph only
     return ices
 
