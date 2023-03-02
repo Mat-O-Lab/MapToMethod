@@ -273,10 +273,9 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     g.bind('method', Namespace( method_url+'/'))
     g.bind('data_url', Namespace( method_url+'/'))
     g.bind('bfo', BFO)
+    prefixes={prefix: str(url) for (prefix, url) in g.namespaces()}
     result = OrderedDict()
-    result['prefixes'] = {'obo': str(BFO),
-                          'data': data_url+'/',
-                          'method': method_url+'/'}
+    result['prefixes'] = prefixes
     result['base'] = 'http://purl.matolab.org/mseo/mappings/'
     # data_file should be url at best
     result['sources'] = {
