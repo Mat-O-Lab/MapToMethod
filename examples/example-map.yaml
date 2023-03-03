@@ -25,7 +25,7 @@ mappings:
     condition:
       function: equal
       parameters:
-      - [str1, $(title)]
+      - [str1, $(titles)]
       - [str2, Dehnung]
     po:
     - ['bfo:RO_0010002', 'method:StrainMeasurementInformation~iri']
@@ -85,7 +85,7 @@ mappings:
     condition:
       function: equal
       parameters:
-      - [str1, $(title)]
+      - [str1, $(titles)]
       - [str2, Standardkraft]
     po:
     - ['bfo:RO_0010002', 'method:ForceMeasurementInformation~iri']
@@ -95,7 +95,7 @@ mappings:
     condition:
       function: equal
       parameters:
-      - [str1, $(title)]
+      - [str1, $(titles)]
       - [str2, Dehnung]
     po:
     - ['bfo:RO_0010002', 'method:StressMeasurementInformation~iri']
@@ -105,7 +105,7 @@ mappings:
     condition:
       function: equal
       parameters:
-      - [str1, $(title)]
+      - [str1, $(titles)]
       - [str2, Standardweg]
     po:
     - ['bfo:RO_0010002', 'method:LenghtMeasurementInformation~iri']
