@@ -288,8 +288,8 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     for ice_key, il_id in map_list:
         _il = subjects_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])
-        if lookup_property=='title':
-            lookup_property='titles'
+        if lookup_property=='$(title)':
+            lookup_property='$(titles)'
         compare_string = str(_il['text'])
 
         result['mappings'][ice_key] = OrderedDict({
