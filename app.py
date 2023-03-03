@@ -13,16 +13,18 @@ from typing import Any, List
 
 from pydantic import BaseSettings, BaseModel, AnyUrl, Field
 
-from fastapi import Request, FastAPI, Body
+from fastapi import Request, FastAPI, Body, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
 import logging
+import yaml
 from rdflib import URIRef
 
 import maptomethod
 import forms
+
 
 class Settings(BaseSettings):
     app_name: str = "MaptoMethod"
@@ -123,24 +125,24 @@ async def create_mapper(request: Request):
         mapping_object_class_uris = start_form.advanced.method_object_super_class_uris.data
         request.session['mapping_object_class_uris']=mapping_object_class_uris
 
-        # try:
-        with maptomethod.Mapper(
-            data_url=data_url,
-            method_url=method_url,
-            mapping_predicate_uri = URIRef(mapping_predicate_uri),
-            data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
-            method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris]
-            ) as mapper:
-            info_choices = [(id, value['text']) for
-                        id, value in mapper.subjects.items()]
-            info_choices.insert(0, (None, 'None'))
-            select_forms = forms.get_select_entries(
-                mapper.objects.keys(),
-                info_choices
-            )
+        try:
+            with maptomethod.Mapper(
+                data_url=data_url,
+                method_url=method_url,
+                mapping_predicate_uri = URIRef(mapping_predicate_uri),
+                data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
+                method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris]
+                ) as mapper:
+                info_choices = [(id, value['text']) for
+                            id, value in mapper.subjects.items()]
+                info_choices.insert(0, (None, 'None'))
+                select_forms = forms.get_select_entries(
+                    mapper.objects.keys(),
+                    info_choices
+                )
             flash(request,str(mapper), 'info')
-        # except Exception as err:
-        #     flash(request,str(err),'error')
+        except Exception as err:
+            flash(request,str(err),'error')
         mapping_form=await forms.MappingFormList.from_formdata(request)
         mapping_form.assignments.entries=select_forms
     return templates.TemplateResponse("index.html",
@@ -248,18 +250,20 @@ def mapping(request: MappingRequest = Body(
                 },
         }
     )):
-    result = maptomethod.Mapper(
-        request.data_url,
-        request.method_url,
-        maplist=request.map_list.items()
-    ).to_pretty_yaml()
+    try:
+        result = maptomethod.Mapper(
+            request.data_url,
+            request.method_url,
+            maplist=request.map_list.items()
+        ).to_pretty_yaml()
+    except Exception as err:
+        print(err)
+        raise HTTPException(status_code=500, detail=str(err))
     return result
 
 @app.get("/info", response_model=Settings)
 async def info() -> dict:
     return settings
-
-import yaml
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

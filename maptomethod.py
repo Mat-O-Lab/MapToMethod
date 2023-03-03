@@ -220,7 +220,7 @@ class Mapper:
         return results
     def to_pretty_yaml(self) -> str:
         result=self.to_yaml()
-        result['filedata'] = dump(result['filedata'], Dumper=Dumper)
+        result['filedata'] = dump(result['filedata'], Dumper=Dumper, allow_unicode=True)
         return result
 
 
