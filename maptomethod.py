@@ -267,7 +267,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     """
     g=Graph()
     g.bind('method', Namespace( method_url+'/'))
-    g.bind('data_url', Namespace( data_url+'/'))
+    g.bind('data', Namespace( data_url+'/'))
     g.bind('bfo', BFO)
     g.bind('csvw', CSVW)
     prefixes={prefix: str(url) for (prefix, url) in g.namespaces()}
@@ -288,6 +288,8 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     for ice_key, il_id in map_list:
         _il = subjects_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])
+        if lookup_property=='title':
+            lookup_property='titles'
         compare_string = str(_il['text'])
 
         result['mappings'][ice_key] = OrderedDict({
