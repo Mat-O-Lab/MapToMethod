@@ -46,7 +46,7 @@ mappings:
       function: equal
       parameters:
       - [str1, $(label)]
-      - [str2, \"Einspannl\xE4nge\"]
+      - [str2, Einspannlänge]
     po:
     - ['bfo:RO_0010002', 'method:StartLenghtMeasurementInformation~iri']
   StrainMaxForce:
