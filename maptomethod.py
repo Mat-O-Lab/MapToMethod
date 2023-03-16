@@ -3,6 +3,7 @@ from re import split as re_split
 
 import ssl
 from collections import OrderedDict
+from tokenize import Name
 from pydantic import AnyUrl
 from typing import Dict, List, Tuple
 
@@ -12,6 +13,7 @@ from yaml.resolver import BaseResolver
 
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import CSVW, RDF, RDFS, DefinedNamespaceMeta
+from rdflib.util import guess_format
 import logging
 import sys, inspect
             
@@ -45,9 +47,11 @@ BFO = Namespace('http://purl.obolibrary.org/obo/')
 BFO_URL = "http://purl.obolibrary.org/obo/bfo.owl"
 MSEO_URL = './ontologies/mseo.ttl'
 CCO_URL = './ontologies/cco.ttl'
+IOF_URL = './ontologies/iof.rdf'
 MSEO = Namespace('https://purl.matolab.org/mseo/mid')
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 OA = Namespace('http://www.w3.org/ns/oa#')
+IOF = Namespace('https://spec.industrialontologies.org/ontology/core/Core/')
 
 def strip_namespace(term: URIRef) -> str:
     """Strip the namespace from full URI
@@ -102,9 +106,12 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
     Returns:
         List[URIRef]: List of all subclasses
     """
+    if not str(superclass):
+        return []
     ontology_url=re_split(r'/|#', superclass[::-1],maxsplit=1)[-1][::-1]
     #lookup in ontologies
     result=[ (key, item['src']) for key,item in ontologies.items() if ontology_url in item['uri']]
+    #print(ontology_url,result)
     if result:
         ontology_url=result[0][1]
         logging.info('Fetching all subclasses of {} in ontology at {}'.format(superclass,ontology_url))
@@ -116,6 +123,7 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
                     #initNs={'cco': CCO, 'mseo': MSEO},
                     ),
                 )
+        #print(list(ontology[ : RDFS.subClassOf]))
         classes = [result[0] for result in results]
     else:
         classes=[superclass,]
@@ -148,8 +156,11 @@ ontologies['MSEO']={'uri': str(MSEO), 'src': MSEO_URL}
 ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
 ontologies['OA']={'uri': str(OA), 'src': OA}
 ontologies['CSVW']['src']="https://www.w3.org/ns/csvw.ttl"
+ontologies['IOF']={'uri': str(IOF), 'src': IOF_URL}
 
-InformtionContentEntity = CCO.InformationContentEntity
+
+#InformtionContentEntity = CCO.InformationContentEntity
+InformtionContentEntity = IOF.InformationContentEntity
 TemporalRegionClass = BFO.BFO_0000008
 ContentToBearingRelation = BFO.RO_0010002
 

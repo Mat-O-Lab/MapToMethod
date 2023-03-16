@@ -43,9 +43,9 @@ class AdvancedForm(Form):
     data_subject_super_class_uris = FieldList(
         URLField('URI', validators=[Optional(), URL()], 
         render_kw={"class":"form-control"}),
-        min_entries=2,
+        min_entries=3,
         default=[maptomethod.OA.Annotation,maptomethod.CSVW.Column],
-        widget=ListWidgetBootstrap(col_class='col-sm-6'),
+        widget=ListWidgetBootstrap(col_class='col-sm-4'),
         render_kw={"class":"row"},
         description='URI of superclass to query for subjects in data.'
         )
@@ -58,9 +58,9 @@ class AdvancedForm(Form):
     method_object_super_class_uris = FieldList(
         URLField('URI', validators=[Optional(), URL()], 
         render_kw={"class":"form-control"}),
-        min_entries=2,
+        min_entries=3,
         default=[maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass],
-        widget=ListWidgetBootstrap(col_class='col-sm-6'),
+        widget=ListWidgetBootstrap(col_class='col-sm-4'),
         render_kw={"class":"row"},
         description='URI of superclass to query for objects in method.'
         )

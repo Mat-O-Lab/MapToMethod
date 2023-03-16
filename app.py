@@ -214,7 +214,7 @@ def query_entities(request: QueryRequest= Body(
                     "value": {
                         "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
                         "entity_classes": [
-                            'http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity', #cco:InformationContentEntity
+                            'https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity', #cco:InformationContentEntity
                             'http://purl.obolibrary.org/obo/BFO_0000008' # bfo:temporal region
                             ]
                     },
