@@ -79,10 +79,15 @@
     "property": "label",
     "text": "Datum"
   },
+  "N443b63d4ea49404c87ad1fbdf1215b48": {
+    "uri": "N443b63d4ea49404c87ad1fbdf1215b48",
+    "property": "title",
+    "text": "GID"
+  },
   "Pruefzeit": {
     "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Pruefzeit",
     "property": "title",
-    "text": "Prüfzeit"
+    "text": "Pruefzeit"
   },
   "Standardweg": {
     "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/Standardweg",
@@ -102,6 +107,6 @@
   "TraverseAbs": {
     "uri": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/TraverseAbs",
     "property": "title",
-    "text": "Traverse abs."
+    "text": "TraverseAbs"
   }
 }
