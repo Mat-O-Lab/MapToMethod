@@ -69,7 +69,6 @@ templates= Jinja2Templates(directory="templates")
 
 if os.environ.get("APP_MODE")=='development':
     app.methods_dict={'DIN_EN_ISO_527': 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl'}
-
 else:
     app.methods_dict = maptomethod.get_methods()
 

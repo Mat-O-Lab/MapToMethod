@@ -21,6 +21,7 @@ import sys, inspect
 from rdflib.plugins.sparql import prepareQuery
 from rdflib.util import guess_format
 import github
+from urllib.request import urlopen
 from urllib.parse import urlparse, unquote
 
 # disable ssl verification
@@ -51,6 +52,7 @@ IOF_URL = './ontologies/iof.rdf'
 MSEO = Namespace('https://purl.matolab.org/mseo/mid')
 CCO = Namespace('http://www.ontologyrepository.com/CommonCoreOntologies/')
 OA = Namespace('http://www.w3.org/ns/oa#')
+OA_URL = 'http://www.w3.org/ns/oa.ttl'
 IOF = Namespace('https://spec.industrialontologies.org/ontology/core/Core/')
 
 def strip_namespace(term: URIRef) -> str:
@@ -79,7 +81,7 @@ def get_rdflib_Namespaces() -> dict:
                     pass
     return class_dict
 
-def parse_graph(url: AnyUrl, graph: Graph) -> Graph:
+def parse_graph(url: AnyUrl, graph: Graph, format: str = '') -> Graph:
     """Parse a Graph from web url to rdflib graph object
 
     Args:
@@ -90,11 +92,14 @@ def parse_graph(url: AnyUrl, graph: Graph) -> Graph:
         Graph: Rdflib graph Object
     """
     parsed_url=urlparse(url)
-    format=guess_format(parsed_url.path)
     if not format:
-        format='xml'
-    print(parsed_url.geturl())
-    graph.parse(unquote(parsed_url.geturl()), format=format)
+        format=guess_format(parsed_url.path)
+    print(parsed_url.path, format)
+    if parsed_url.scheme in ['https', 'http']:
+        graph.parse(urlopen(parsed_url.geturl()).read(), format=format)
+
+    elif parsed_url.scheme in ['file','']:
+        graph.parse(parsed_url.path, format=format)
     return graph
 
 def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
@@ -154,7 +159,7 @@ ontologies=get_rdflib_Namespaces()
 ontologies['BFO']={'uri': str(BFO), 'src': BFO_URL}
 ontologies['MSEO']={'uri': str(MSEO), 'src': MSEO_URL}
 ontologies['CCO']={'uri': str(CCO), 'src': CCO_URL}
-ontologies['OA']={'uri': str(OA), 'src': OA}
+ontologies['OA']={'uri': str(OA), 'src': OA_URL}
 ontologies['CSVW']['src']="https://www.w3.org/ns/csvw.ttl"
 ontologies['IOF']={'uri': str(IOF), 'src': IOF_URL}
 
@@ -248,7 +253,13 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     """
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
-    data=parse_graph(data_url, graph = Graph())
+    print('query data at url: {}'.format(data_url))
+    #fix for crude ckan url
+    if data_url.endswith('/download/upload'):
+        format='json-ld'
+    else:
+        format=''
+    data=parse_graph(data_url, graph = Graph(),format=format)
     data_entities=dict()
     subjects=[s for s, p, o in data.triples((None,  RDF.type, None)) if o in class_list]
     for s in subjects:
