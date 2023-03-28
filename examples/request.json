@@ -1,6 +1,6 @@
 {
-    "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
-    "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+    "data_url": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json",
+    "method_url": "https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.ttl",
     "map_list": {
         "SpecimenID": "AktuelleProbe0",
         "WidthMeasurement": "ProbenbreiteB03", 
