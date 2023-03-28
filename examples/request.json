@@ -2,15 +2,13 @@
     "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
     "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
     "map_list": {
-        "SpecimenName": "AktuelleProbe0",
-        "StrainMeasurementInformation": "Dehnung",
-        "ExperimentDateIdentifier": "Datum15", 
-        "StartLenghtMeasurementInformation": "Einspannlaenge1", 
-        "StrainMaxForce": "DehnungBeiFmax9", 
-        "WidthMeasurementInformation": "ProbenbreiteB03", 
-        "ThicknessMeasurementInformation": "ProbendickeA04", 
-        "ForceMeasurementInformation": "Standardkraft", 
-        "StressMeasurementInformation": "Dehnung", 
-        "LenghtMeasurementInformation": "Standardweg"
+        "SpecimenID": "AktuelleProbe0",
+        "WidthMeasurement": "ProbenbreiteB03", 
+        "ThicknessMeasurement": "ProbendickeA04", 
+        "ForceMeasurement": "Standardkraft", 
+        "LengthMeasurement": "Standardweg",
+        "ExperimentTimeInterval": "Prüfzeit",
+        "CrossheadSpeedSetPointValue": "Pruefgeschwindigkeit5",
+        "PreLoadSetPointValue": "Vorkraft6"
     }
 }
