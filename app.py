@@ -200,7 +200,7 @@ def query_entities(request: QueryRequest= Body(
                     "summary": "Query of csvw data json-ld",
                     "description": "Querys of csvw data json-ld for given set of superclasses",
                     "value": {
-                        "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+                        "url": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json",
                         "entity_classes": [
                             "http://www.w3.org/ns/csvw#Column",
                             "http://www.w3.org/ns/oa#Annotation"
@@ -211,7 +211,7 @@ def query_entities(request: QueryRequest= Body(
                     "summary": "Query of method graph entities",
                     "description": "Querys of method graph for given set of superclasses",
                     "value": {
-                        "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+                        "url": "https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.ttl",
                         "entity_classes": [
                             'https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity', #cco:InformationContentEntity
                             'http://purl.obolibrary.org/obo/BFO_0000008' # bfo:temporal region
@@ -239,8 +239,8 @@ def mapping(request: MappingRequest = Body(
                     "summary": "A simple mapping example",
                     "description": "Creates a very simple mapping file with one rule.",
                     "value": {
-                        "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
-                        "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+                        "data_url": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json",
+                        "method_url": "https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.ttl",
                         "map_list": {
                             "SpecimenName": "AktuelleProbe0",
                             "StrainMeasurementInformation": "Dehnung"
