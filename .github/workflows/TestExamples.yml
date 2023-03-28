@@ -31,7 +31,7 @@ jobs:
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
-          "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+          "url": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json",
           "entity_classes": [
             "http://www.w3.org/ns/csvw#Column",
             "http://www.w3.org/ns/oa#Annotation"
@@ -41,7 +41,7 @@ jobs:
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
-          "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+          "url": "https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.ttl",
           "entity_classes": [
             "http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity",
             "http://purl.obolibrary.org/obo/BFO_0000008"
