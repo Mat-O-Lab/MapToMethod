@@ -263,7 +263,7 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     data_entities=dict()
     subjects=[s for s, p, o in data.triples((None,  RDF.type, None)) if o in class_list]
     for s in subjects:
-        pos=[ (p, o) for (p, o) in data.predicate_objects(s) if p in [RDFS.label, CSVW.title]]
+        pos=[ (p, o) for (p, o) in data.predicate_objects(s) if p in [RDFS.label, CSVW.name]]
         if pos:
             p, o = pos[0]
             data_entities[s.split('/')[-1]]={
@@ -306,7 +306,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
         }
     result['mappings'] = OrderedDict()
 
-
+    print(subjects_dict)
     for ice_key, il_id in map_list:
         _il = subjects_dict[il_id]
         lookup_property = '$({})'.format(_il['property'])

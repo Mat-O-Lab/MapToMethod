@@ -11,45 +11,39 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, List
 
-from pydantic import BaseSettings, BaseModel, AnyUrl, Field
+from pydantic import BaseModel, AnyUrl, Field
 
 from fastapi import Request, FastAPI, Body, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 import logging
+from io import BytesIO
 import yaml
 from rdflib import URIRef
 
 import maptomethod
 import forms
 
+import settings
+setting = settings.Setting()
 
-class Settings(BaseSettings):
-    app_name: str = "MaptoMethod"
-    admin_email: str = os.environ.get("ADMIN_MAIL") or "csvtocsvw@matolab.org"
-    items_per_user: int = 50
-    version: str = "v1.0.6"
-    config_name: str = os.environ.get("APP_MODE") or "development"
-    openapi_url: str ="/api/openapi.json"
-    docs_url: str = "/api/docs"
-settings = Settings()
 
 config_name = os.environ.get("APP_MODE") or "development"
 
 middleware = [Middleware(SessionMiddleware, secret_key=os.getenv("APP_SECRET", "your-secret"))]
 app = FastAPI(
-    title=settings.app_name,
+    title=setting.app_name,
     description="Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.",
-    version=settings.version,
-    contact={"name": "Thomas Hanke, Mat-O-Lab", "url": "https://github.com/Mat-O-Lab", "email": settings.admin_email},
+    version=setting.version,
+    contact={"name": "Thomas Hanke, Mat-O-Lab", "url": "https://github.com/Mat-O-Lab", "email": setting.admin_email},
     license_info={
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
-    openapi_url=settings.openapi_url,
-    docs_url=settings.docs_url,
+    openapi_url=setting.openapi_url,
+    docs_url=setting.docs_url,
     redoc_url=None,    
     #to disable highlighting for large output
     #swagger_ui_parameters= {'syntaxHighlight': False},
@@ -192,34 +186,18 @@ async def map(request: Request):
 class QueryRequest(BaseModel):
     url: AnyUrl = Field('', title='Graph Url', description='Url to the sematic dataset to query')
     entity_classes: List = Field([], title='Class List', description='List of super classes to query for',)
-
-@app.post("/api/entities")
-def query_entities(request: QueryRequest= Body(
-        examples={
-                "data": {
-                    "summary": "Query of csvw data json-ld",
-                    "description": "Querys of csvw data json-ld for given set of superclasses",
-                    "value": {
+    class Config:
+        schema_extra = {
+            "example": {
                         "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "entity_classes": [
                             "http://www.w3.org/ns/csvw#Column",
                             "http://www.w3.org/ns/oa#Annotation"
                         ]
                     },
-                },
-                "method": {
-                    "summary": "Query of method graph entities",
-                    "description": "Querys of method graph for given set of superclasses",
-                    "value": {
-                        "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
-                        "entity_classes": [
-                            'https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity', #cco:InformationContentEntity
-                            'http://purl.obolibrary.org/obo/BFO_0000008' # bfo:temporal region
-                            ]
-                    },
-                },
         }
-    )):
+@app.post("/api/entities")
+def query_entities(request: QueryRequest):
     #translate urls in entity_classes list to URIRef objects
     request.entity_classes=[ URIRef(url) for url in request.entity_classes]
     return maptomethod.query_entities(request.url, request.entity_classes)
@@ -229,45 +207,45 @@ def query_entities(request: QueryRequest= Body(
 class MappingRequest(BaseModel):
     data_url: AnyUrl = Field('', title='Graph Url', description='Url to data metadata to use.')
     method_url: AnyUrl = Field('', title='Graph Url', description='Url to knowledge graph to use.')
-    map_list: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and ids of indivuals in data metadata as values to create mapping rules for.',)
-
-
-@app.post("/api/mapping")
-def mapping(request: MappingRequest = Body(
-        examples={
-                "normal": {
-                    "summary": "A simple mapping example",
-                    "description": "Creates a very simple mapping file with one rule.",
-                    "value": {
+    map: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and ids of indivuals in data metadata as values to create mapping rules for.',)
+    class Config:
+        schema_extra = {
+            "example": {
                         "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
-                        "map_list": {
+                        "map": {
                             "SpecimenName": "AktuelleProbe0",
-                            "StrainMeasurementInformation": "Dehnung"
+                            "StrainMeasurementInformation": "table-1-Dehnung"
                         },
                     },
-                },
         }
-    )):
-    result = maptomethod.Mapper(
-            request.data_url,
-            request.method_url,
-            maplist=request.map_list.items()
-        ).to_pretty_yaml()
+
+class YAMLResponse(StreamingResponse):
+    media_type = "application/x-yaml"
+
+@app.post("/api/mapping", response_class=YAMLResponse)
+def mapping(request: MappingRequest) -> StreamingResponse:
     try:
         result = maptomethod.Mapper(
             request.data_url,
             request.method_url,
-            maplist=request.map_list.items()
+            maplist=request.map.items()
         ).to_pretty_yaml()
     except Exception as err:
         print(err)
         raise HTTPException(status_code=500, detail=str(err))
-    return result
+    data_bytes=BytesIO(result['filedata'].encode())
+    filename=result['filename']
+    headers = {
+        'Content-Disposition': 'attachment; filename={}'.format(filename),
+        'Access-Control-Expose-Headers': 'Content-Disposition'
+    }
+    media_type="application/x-yaml"
+    return StreamingResponse(content=data_bytes, media_type=media_type, headers=headers)
 
-@app.get("/info", response_model=Settings)
+@app.get("/info", response_model=settings.Setting)
 async def info() -> dict:
-    return settings
+    return setting
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
