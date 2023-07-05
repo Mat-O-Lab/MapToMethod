@@ -1,11 +1,16 @@
-FROM docker.io/python:3.8
+FROM docker.io/python:3.11.1-slim
 
-RUN apt-get -y update && apt-get install -y apt-utils gcc g++
-RUN apt-get -y upgrade
+RUN buildDeps='locales curl' \
+    && set -x \
+    && apt-get update && apt-get install -y $buildDeps --no-install-recommends \
+    && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
+    && sed -i 's/^# de_DE.UTF-8 UTF-8$/de_DE.UTF-8 UTF-8/g' /etc/locale.gen \
+    && locale-gen en_US.UTF-8 de_DE.UTF-8 \
+    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
-#RUN git clone https://github.com/Mat-O-Lab/MapToMethod.git /src
-ADD requirements.txt /requirements.txt
-RUN pip install --no-cache-dir -r /requirements.txt
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 ADD . /src
 WORKDIR /src

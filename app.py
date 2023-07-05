@@ -229,7 +229,7 @@ def query_entities(request: QueryRequest= Body(
 class MappingRequest(BaseModel):
     data_url: AnyUrl = Field('', title='Graph Url', description='Url to data metadata to use.')
     method_url: AnyUrl = Field('', title='Graph Url', description='Url to knowledge graph to use.')
-    map_list: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and labels of indivuals in data metadata as values to create mapping rules for.',)
+    map_list: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and ids of indivuals in data metadata as values to create mapping rules for.',)
 
 
 @app.post("/api/mapping")
@@ -249,6 +249,11 @@ def mapping(request: MappingRequest = Body(
                 },
         }
     )):
+    result = maptomethod.Mapper(
+            request.data_url,
+            request.method_url,
+            maplist=request.map_list.items()
+        ).to_pretty_yaml()
     try:
         result = maptomethod.Mapper(
             request.data_url,
