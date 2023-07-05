@@ -207,12 +207,18 @@ def query_entities(request: QueryRequest):
 class MappingRequest(BaseModel):
     data_url: AnyUrl = Field('', title='Graph Url', description='Url to data metadata to use.')
     method_url: AnyUrl = Field('', title='Graph Url', description='Url to knowledge graph to use.')
+    data_super_classes: List = Field([maptomethod.OA.Annotation,maptomethod.CSVW.Column], title='Subject Super Classes', description='List of subject super classes to query for mapping partners in data.')
+    predicate: AnyUrl = Field(maptomethod.ContentToBearingRelation, title='predicate property', description='Predicate Property to connect data to method entities.')
+    method_super_classes: List = Field([maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass], title='Object Super Classes', description='List of object super classes to query for mapping partners in method graph.')
     map: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and ids of indivuals in data metadata as values to create mapping rules for.',)
     class Config:
         schema_extra = {
             "example": {
                         "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+                        "data_super_classes": [maptomethod.OA.Annotation,maptomethod.CSVW.Column],
+                        "predicate": maptomethod.ContentToBearingRelation,
+                        "method_super_classes": [maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass],
                         "map": {
                             "SpecimenName": "AktuelleProbe0",
                             "StrainMeasurementInformation": "table-1-Dehnung"
@@ -229,6 +235,8 @@ def mapping(request: MappingRequest) -> StreamingResponse:
         result = maptomethod.Mapper(
             request.data_url,
             request.method_url,
+            method_object_super_class_uris=[URIRef(uri) for uri in request.method_super_classes],
+            data_subject_super_class_uris=[URIRef(uri) for uri in request.data_super_classes],
             maplist=request.map.items()
         ).to_pretty_yaml()
     except Exception as err:

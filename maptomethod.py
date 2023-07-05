@@ -186,9 +186,9 @@ class Mapper:
         Args:
             data_url (AnyUrl): Url to metadata describing the data to link
             method_url (AnyUrl): Url to knowledgegraph describing context to link data to.
-            data_subject_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as subjects of the mapping rules. Defaults to [InformtionContentEntity,TemporalRegionClass].
+            method_subject_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as subjects of the mapping rules. Defaults to [InformtionContentEntity,TemporalRegionClass].
             mapping_predicate_uri (URIRef, optional): Object property to use as predicate to link. Defaults to ContentToBearingRelation.
-            method_object_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as objects of the mapping rules. Defaults to [OA.Annotation,CSVW.Column].
+            data_object_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as objects of the mapping rules. Defaults to [OA.Annotation,CSVW.Column].
             subjects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the data metadata. Defaults to [].
             objects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the knowledge grph. Defaults to [].
             maplist (List[Tuple[str, str]], optional): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for. Defaults to [].
@@ -206,6 +206,9 @@ class Mapper:
             self.subjects = query_entities(self.data_url,data_subject_super_class_uris)
         else:
             self.subjects = subjects
+        print(self.objects)
+        print("----\n")
+        print(self.subjects)
         self.maplist = maplist
     #methods for context managers
     def __enter__(self):
