@@ -311,26 +311,27 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
 
     print(subjects_dict)
     for ice_key, il_id in map_list:
-        _il = subjects_dict[il_id]
-        lookup_property = '$({})'.format(_il['property'])
-        if lookup_property=='$(title)':
-            lookup_property='$(titles)'
-        compare_string = str(_il['text'])
+        _il = subjects_dict.get(il_id, None)
+        if _il:
+            lookup_property = '$({})'.format(_il['property'])
+            if lookup_property=='$(title)':
+                lookup_property='$(titles)'
+            compare_string = str(_il['text'])
 
-        result['mappings'][ice_key] = OrderedDict({
-          'sources': ['data_entities'],
-          's': 'data:$(@id)',
-          'condition': {
-              'function': 'equal',
-              'parameters': [
-                    ['str1', lookup_property],
-                    ['str2', compare_string],
-                ],
-              },
-          # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-          'po': [[mapping_predicate_uri.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
-          })
-        # self.mapping_yml=result
+            result['mappings'][ice_key] = OrderedDict({
+            'sources': ['data_entities'],
+            's': 'data:$(@id)',
+            'condition': {
+                'function': 'equal',
+                'parameters': [
+                        ['str1', lookup_property],
+                        ['str2', compare_string],
+                    ],
+                },
+            # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
+            'po': [[mapping_predicate_uri.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
+            })
+            # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
     data=result
     return {'filename':filename, 'filedata': data}

@@ -3,12 +3,12 @@
     "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
     "map": {
         "SpecimenID": "AktuelleProbe0",
-        "WidthMeasurement": "table-1-ProbenbreiteB03", 
+        "WidthMeasurement": "ProbenbreiteB03", 
         "ThicknessMeasurement": "ProbendickeA04", 
-        "ForceMeasurement": "Standardkraft", 
-        "LengthMeasurement": "Standardweg",
+        "ForceMeasurement": "table-1-Standardkraft", 
+        "LengthMeasurement": "table-1-Standardweg",
         "ExperimentTimeInterval": "table-1-Prüfzeit",
-        "CrossheadSpeedSetPointValue": "table-1-Pruefgeschwindigkeit5",
-        "PreLoadSetPointValue": "table-1-Vorkraft6"
+        "CrossheadSpeedSetPointValue": "Pruefgeschwindigkeit5",
+        "PreLoadSetPointValue": "Vorkraft6"
     }
 }
