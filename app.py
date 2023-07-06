@@ -4,10 +4,10 @@ import os
 import base64
 
 import uvicorn
+from starlette_wtf import CSRFProtectMiddleware, csrf_protect
 from starlette.responses import HTMLResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
-
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, List
 
@@ -32,7 +32,17 @@ setting = settings.Setting()
 
 config_name = os.environ.get("APP_MODE") or "development"
 
-middleware = [Middleware(SessionMiddleware, secret_key=os.getenv("APP_SECRET", "your-secret"))]
+middleware = [
+    Middleware(SessionMiddleware, secret_key=os.environ.get('APP_SECRET','changemeNOW')),
+    #Middleware(CSRFProtectMiddleware, csrf_secret=os.environ.get('APP_SECRET','changemeNOW')),
+    Middleware(CORSMiddleware, 
+            allow_origins=["*"], # Allows all origins
+            allow_methods=["*"], # Allows all methods
+            allow_headers=["*"] # Allows all headers
+            ),
+    Middleware(uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trusted_hosts="*")
+    ]
+
 app = FastAPI(
     title=setting.app_name,
     description="Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.",
@@ -49,14 +59,6 @@ app = FastAPI(
     #swagger_ui_parameters= {'syntaxHighlight': False},
     middleware=middleware
 )
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"], # Allows all methods
-    allow_headers=["*"], # Allows all headers
-)
-app.add_middleware(uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trusted_hosts="*")
 
 app.mount("/static/", StaticFiles(directory='static', html=True), name="static")
 templates= Jinja2Templates(directory="templates")
@@ -152,11 +154,17 @@ async def map(request: Request):
     data_url=request.session.get('data_url', None)
     method_url=request.session.get('method_url', None)
     method_sel=request.session.get('method_url', None)
+    mapping_subject_class_uris = request.session.get('mapping_subject_class_uris',None)
+    mapping_predicate_uri = request.session.get('mapping_predicate_uri',None)
+    mapping_object_class_uris = request.session.get('mapping_object_class_uris',None)
     start_form = forms.StartForm(request,
         data_url=data_url,
         method_url=method_url,
         method_sel=method_sel)
     start_form.method_sel.choices=[(v, k) for k, v in app.methods_dict.items()]
+    # entrys from advanced form
+    
+    
     result = ''
     filename = ''
     result_string= ''
@@ -165,7 +173,14 @@ async def map(request: Request):
     maplist = [(k, v) for k, v in select_dict.items() if v != 'None']
     logging.info('Creating mapping file for mapping list: {}'.format(maplist))
     request.session['maplist'] = maplist
-    with maptomethod.Mapper(data_url=data_url, method_url=method_url,maplist=maplist) as mapper:
+    with maptomethod.Mapper(
+        data_url=data_url, 
+        method_url=method_url,
+        mapping_predicate_uri = URIRef(mapping_predicate_uri),
+        data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
+        method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris],
+        maplist=maplist
+        ) as mapper:
         result=mapper.to_pretty_yaml()
         filename = result['filename']
         result_string = result['filedata']
@@ -236,6 +251,7 @@ def mapping(request: MappingRequest) -> StreamingResponse:
             request.data_url,
             request.method_url,
             method_object_super_class_uris=[URIRef(uri) for uri in request.method_super_classes],
+            mapping_predicate_uri=URIRef(request.predicate),
             data_subject_super_class_uris=[URIRef(uri) for uri in request.data_super_classes],
             maplist=request.map.items()
         ).to_pretty_yaml()

@@ -206,9 +206,9 @@ class Mapper:
             self.subjects = query_entities(self.data_url,data_subject_super_class_uris)
         else:
             self.subjects = subjects
-        print(self.objects)
-        print("----\n")
-        print(self.subjects)
+        print(self.mapping_predicate_uri)
+        # print("----\n")
+        # print(self.subjects)
         self.maplist = maplist
     #methods for context managers
     def __enter__(self):
