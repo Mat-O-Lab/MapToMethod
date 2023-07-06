@@ -46,6 +46,9 @@ jobs:
             "https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity",
             "http://purl.obolibrary.org/obo/BFO_0000008"
           ]}'| jq . > contententities.json
+      - name: delete yaml files
+        working-directory: ${{env.WORKING_DIR}}
+        run: rm *.yaml
       - name: create YARRRML mapping
         working-directory: ${{env.WORKING_DIR}}
         run: |
