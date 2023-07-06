@@ -41,9 +41,9 @@ jobs:
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
-          "url": "https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.ttl",
+          "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
           "entity_classes": [
-            "http://www.ontologyrepository.com/CommonCoreOntologies/InformationContentEntity",
+            "https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity",
             "http://purl.obolibrary.org/obo/BFO_0000008"
           ]}'| jq . > contententities.json
       - name: create YARRRML mapping
