@@ -79,34 +79,34 @@
     "property": "label",
     "text": "Datum"
   },
-  "N66d1d39a795740d5b329d2d59446e1e8": {
-    "uri": "N66d1d39a795740d5b329d2d59446e1e8",
-    "property": "title",
+  "table-1-GID": {
+    "uri": "file:///src/table-1-GID",
+    "property": "name",
     "text": "GID"
   },
-  "Pruefzeit": {
-    "uri": "file:///src/Pruefzeit",
-    "property": "title",
-    "text": "Prüfzeit"
+  "table-1-Pruefzeit": {
+    "uri": "file:///src/table-1-Pruefzeit",
+    "property": "name",
+    "text": "Pruefzeit"
   },
-  "Standardweg": {
-    "uri": "file:///src/Standardweg",
-    "property": "title",
+  "table-1-Standardweg": {
+    "uri": "file:///src/table-1-Standardweg",
+    "property": "name",
     "text": "Standardweg"
   },
-  "Standardkraft": {
-    "uri": "file:///src/Standardkraft",
-    "property": "title",
+  "table-1-Standardkraft": {
+    "uri": "file:///src/table-1-Standardkraft",
+    "property": "name",
     "text": "Standardkraft"
   },
-  "Dehnung": {
-    "uri": "file:///src/Dehnung",
-    "property": "title",
+  "table-1-Dehnung": {
+    "uri": "file:///src/table-1-Dehnung",
+    "property": "name",
     "text": "Dehnung"
   },
-  "TraverseAbs": {
-    "uri": "file:///src/TraverseAbs",
-    "property": "title",
-    "text": "Traverse abs."
+  "table-1-TraverseAbs": {
+    "uri": "file:///src/table-1-TraverseAbs",
+    "property": "name",
+    "text": "TraverseAbs"
   }
 }
