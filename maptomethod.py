@@ -309,9 +309,10 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
         }
     result['mappings'] = OrderedDict()
 
-    print(subjects_dict)
+    logging.debug(subjects_dict)
     for ice_key, il_id in map_list:
         _il = subjects_dict.get(il_id, None)
+        logging.debug("{} {} {}".format(ice_key,il_id,_il))
         if _il:
             lookup_property = '$({})'.format(_il['property'])
             if lookup_property=='$(title)':
@@ -329,7 +330,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
                     ],
                 },
             # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
-            'po': [[mapping_predicate_uri.n3(g.namespace_manager), 'method:'+ice_key+'~iri'], ]
+            'po': [[str(mapping_predicate_uri), 'method:'+ice_key+'~iri'], ]
             })
             # self.mapping_yml=result
     filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
