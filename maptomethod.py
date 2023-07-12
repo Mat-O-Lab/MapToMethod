@@ -199,13 +199,18 @@ class Mapper:
         self.mapping_predicate_uri=mapping_predicate_uri
         #file_data, file_name =open_file(data_url)
         if not objects:
-            self.objects = query_entities(self.method_url,method_object_super_class_uris)
+            self.objects, base_ns_objects = query_entities(self.method_url,method_object_super_class_uris)
+            self.base_ns_objects=base_ns_objects
         else:
             self.objects = objects
+            self.base_ns_objects=self.method_url+'/'
         if not subjects:
-            self.subjects = query_entities(self.data_url,data_subject_super_class_uris)
+            self.subjects, base_ns_subjects = query_entities(self.data_url,data_subject_super_class_uris)
+            self.base_ns_subjects=base_ns_subjects
         else:
             self.subjects = subjects
+            self.base_ns_subjects=self.data_url+'/'
+        #print(self.subjects)
         print(self.mapping_predicate_uri)
         # print("----\n")
         # print(self.subjects)
@@ -231,7 +236,8 @@ class Mapper:
         """
         results = get_mapping_output(
             self.data_url,
-            self.method_url,
+            self.base_ns_subjects,
+            self.base_ns_objects,
             self.maplist,
             self.subjects,
             self.mapping_predicate_uri
@@ -263,25 +269,41 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     else:
         format=''
     data=parse_graph(data_url, graph = Graph(),format=format)
+
+    # find base iri if any
+    print(list(data.namespaces()))
+    for ns_prefix, namespace in data.namespaces():
+        if ns_prefix=='base':
+            logging.debug('found base namespace: {}.'.format(namespace))
+            break
+    if namespace:
+        base_ns=namespace
+    else:
+        base_ns=data_url+'/'
+
     data_entities=dict()
     subjects=[s for s, p, o in data.triples((None,  RDF.type, None)) if o in class_list]
     for s in subjects:
         pos=[ (p, o) for (p, o) in data.predicate_objects(s) if p in [RDFS.label, CSVW.name]]
+        #name=s.rsplit('/',1)[-1].rsplit('#',1)[-1]
+        name=strip_namespace(s)
         if pos:
             p, o = pos[0]
-            data_entities[s.split('/')[-1]]={
+            data_entities[name]={
                 'uri': str(s),
                 'property': strip_namespace(p),
                 'text': o}
         else:
-            data_entities[s.split('/')[-1]]={'uri': str(s)}
-    return data_entities
+            data_entities[name]={'uri': str(s)}
+    return data_entities, base_ns
 
-def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
+def get_mapping_output(data_url: AnyUrl, data_ns: AnyUrl, method_ns: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
     """Get yaml definging the yarrrml mapping rules.
 
     Args:
         data_url (AnyUrl): Url to data metadata to use
+        data_ns (AnyUrl): Namespace of the data entities to map
+        method_ns (AnyUrl): Namespace of the method entities to relate to
         method_url (AnyUrl): Url to knowledge graph to use
         map_list (List): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for.
         subjects_dict (dict): Dict of subjects to create mapping rules for with short entity IRI as key
@@ -290,9 +312,9 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
     Returns:
         dict: Dict with key filename with value the sugested mapping filenaem and filedata with value the string content of the generated yarrrml yaml file.
     """
-    g=Graph()
-    g.bind('method', Namespace( method_url+'/'))
-    g.bind('data', Namespace( data_url+'/'))
+    g=Graph(bind_namespaces='core')
+    g.bind('method', Namespace( method_ns))
+    #g.bind('data', Namespace( data_ns))
     g.bind('bfo', BFO)
     g.bind('csvw', CSVW)
     prefixes={prefix: str(url) for (prefix, url) in g.namespaces()}
@@ -308,7 +330,7 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
           }
         }
     result['mappings'] = OrderedDict()
-
+    print(subjects_dict)
     logging.debug(subjects_dict)
     for ice_key, il_id in map_list:
         _il = subjects_dict.get(il_id, None)
@@ -321,7 +343,8 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
 
             result['mappings'][ice_key] = OrderedDict({
             'sources': ['data_entities'],
-            's': 'data:$(@id)',
+            #'s': 'data:$(@id)',
+            's': '$(@id)',
             'condition': {
                 'function': 'equal',
                 'parameters': [
@@ -331,8 +354,9 @@ def get_mapping_output(data_url: AnyUrl, method_url: AnyUrl, map_list: List, sub
                 },
             # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
             'po': [[str(mapping_predicate_uri), 'method:'+ice_key+'~iri'], ]
+            #'po': [[str(mapping_predicate_uri), _il+'~iri'], ]
             })
             # self.mapping_yml=result
-    filename = data_url.split('/')[-1].split('-metadata')[0]+'-map.yaml'
+    filename = data_url.rsplit('/',1)[-1].rsplit('.',1)[0].rsplit('-',1)[0]+'-map.yaml'
     data=result
     return {'filename':filename, 'filedata': data}
