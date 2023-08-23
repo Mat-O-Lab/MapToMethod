@@ -262,16 +262,15 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     """
     subclasses=[get_all_sub_classes(superclass) for superclass in entity_classes]
     class_list=[item for sublist in subclasses for item in sublist]
-    print('query data at url: {}'.format(data_url))
+    logging.info('query data at url: {}\nfor entitys classes: {}'.format(data_url,class_list))
     #fix for crude ckan url
     if data_url.endswith('/download/upload'):
         format='json-ld'
     else:
-        format=''
+        format=guess_format(data_url)
     data=parse_graph(data_url, graph = Graph(),format=format)
-
     # find base iri if any
-    print(list(data.namespaces()))
+    # print(entity_classes)
     for ns_prefix, namespace in data.namespaces():
         if ns_prefix=='base':
             logging.debug('found base namespace: {}.'.format(namespace))
@@ -287,6 +286,7 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
         pos=[ (p, o) for (p, o) in data.predicate_objects(s) if p in [RDFS.label, CSVW.name]]
         #name=s.rsplit('/',1)[-1].rsplit('#',1)[-1]
         name=strip_namespace(s)
+        print(s,pos)
         if pos:
             p, o = pos[0]
             data_entities[name]={
@@ -295,6 +295,7 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
                 'text': o}
         else:
             data_entities[name]={'uri': str(s)}
+    logging.info('query resuls: {}'.format(data_entities))
     return data_entities, base_ns
 
 def get_mapping_output(data_url: AnyUrl, data_ns: AnyUrl, method_ns: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:

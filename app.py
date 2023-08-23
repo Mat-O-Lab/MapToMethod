@@ -123,23 +123,21 @@ async def create_mapper(request: Request):
         request.session['mapping_object_class_uris']=mapping_object_class_uris
 
         try:
-            with maptomethod.Mapper(
+            mapper=maptomethod.Mapper(
                 data_url=data_url,
                 method_url=method_url,
                 mapping_predicate_uri = URIRef(mapping_predicate_uri),
                 data_subject_super_class_uris = [ URIRef(uri) for uri in mapping_subject_class_uris],
                 method_object_super_class_uris = [ URIRef(uri) for uri in mapping_object_class_uris]
-                ) as mapper:
-                info_choices = [(id, value['text']) for
-                            id, value in mapper.subjects.items()]
-                info_choices.insert(0, (None, 'None'))
-                select_forms = forms.get_select_entries(
-                    mapper.objects.keys(),
-                    info_choices
                 )
             flash(request,str(mapper), 'info')
         except Exception as err:
             flash(request,str(err),'error')
+        print(mapper.objects.keys())
+        #only named instances in the data can be mapped
+        info_choices = [(id, value['text']) for id, value in mapper.subjects.items() if 'text' in value.keys()]
+        info_choices.insert(0, (None, 'None'))
+        select_forms = forms.get_select_entries(mapper.objects.keys(), info_choices)
         mapping_form=await forms.MappingFormList.from_formdata(request)
         mapping_form.assignments.entries=select_forms
     return templates.TemplateResponse("index.html",
