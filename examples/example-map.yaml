@@ -25,7 +25,7 @@ mappings:
       - [str1, $(label)]
       - [str2, aktuelle Probe]
     po:
-    - ['bfo:RO_0010002', 'method:SpecimenID~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:SpecimenID~iri']
   WidthMeasurement:
     sources: [data_entities]
     s: data:$(@id)
@@ -35,7 +35,7 @@ mappings:
       - [str1, $(label)]
       - [str2, Probenbreite b0]
     po:
-    - ['bfo:RO_0010002', 'method:WidthMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:WidthMeasurement~iri']
   ThicknessMeasurement:
     sources: [data_entities]
     s: data:$(@id)
@@ -45,7 +45,7 @@ mappings:
       - [str1, $(label)]
       - [str2, Probendicke a0]
     po:
-    - ['bfo:RO_0010002', 'method:ThicknessMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:ThicknessMeasurement~iri']
   ForceMeasurement:
     sources: [data_entities]
     s: data:$(@id)
@@ -55,7 +55,7 @@ mappings:
       - [str1, $(name)]
       - [str2, Standardkraft]
     po:
-    - ['bfo:RO_0010002', 'method:ForceMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:ForceMeasurement~iri']
   LengthMeasurement:
     sources: [data_entities]
     s: data:$(@id)
@@ -65,7 +65,7 @@ mappings:
       - [str1, $(name)]
       - [str2, Standardweg]
     po:
-    - ['bfo:RO_0010002', 'method:LengthMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:LengthMeasurement~iri']
   CrossheadSpeedSetPointValue:
     sources: [data_entities]
     s: data:$(@id)
@@ -75,7 +75,7 @@ mappings:
       - [str1, $(label)]
       - [str2, Prüfgeschwindigkeit]
     po:
-    - ['bfo:RO_0010002', 'method:CrossheadSpeedSetPointValue~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:CrossheadSpeedSetPointValue~iri']
   PreLoadSetPointValue:
     sources: [data_entities]
     s: data:$(@id)
@@ -85,4 +85,4 @@ mappings:
       - [str1, $(label)]
       - [str2, Vorkraft]
     po:
-    - ['bfo:RO_0010002', 'method:PreLoadSetPointValue~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:PreLoadSetPointValue~iri']
