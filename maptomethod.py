@@ -204,16 +204,16 @@ class Mapper:
         else:
             self.objects = objects
             self.base_ns_objects=self.method_url+'/'
+        logging.debug('namespace objects: '+self.base_ns_objects)
+        
         if not subjects:
             self.subjects, base_ns_subjects = query_entities(self.data_url,data_subject_super_class_uris)
             self.base_ns_subjects=base_ns_subjects
         else:
             self.subjects = subjects
             self.base_ns_subjects=self.data_url+'/'
-        #print(self.subjects)
-        print(self.mapping_predicate_uri)
-        # print("----\n")
-        # print(self.subjects)
+        logging.debug('namespace subjects: '+self.base_ns_subjects)
+        
         self.maplist = maplist
     #methods for context managers
     def __enter__(self):
@@ -270,14 +270,14 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
         format=guess_format(data_url)
     data=parse_graph(data_url, graph = Graph(),format=format)
     # find base iri if any
-    # print(entity_classes)
+    print(list(data.namespaces()))
+    base_ns=None
     for ns_prefix, namespace in data.namespaces():
         if ns_prefix=='base':
             logging.debug('found base namespace: {}.'.format(namespace))
+            base_ns=namespace
             break
-    if namespace:
-        base_ns=namespace
-    else:
+    if not base_ns:
         base_ns=data_url+'/'
 
     data_entities=dict()
@@ -314,8 +314,8 @@ def get_mapping_output(data_url: AnyUrl, data_ns: AnyUrl, method_ns: AnyUrl, map
         dict: Dict with key filename with value the sugested mapping filenaem and filedata with value the string content of the generated yarrrml yaml file.
     """
     g=Graph(bind_namespaces='core')
-    g.bind('method', Namespace( method_ns))
-    #g.bind('data', Namespace( data_ns))
+    g.bind('method', Namespace(method_ns))
+    g.bind('data', Namespace( data_ns))
     g.bind('bfo', BFO)
     g.bind('csvw', CSVW)
     prefixes={prefix: str(url) for (prefix, url) in g.namespaces()}
