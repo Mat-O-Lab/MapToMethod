@@ -44,20 +44,22 @@ middleware = [
     ]
 
 app = FastAPI(
-    title=setting.app_name,
-    description="Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.",
+    title=setting.name,
+    description=setting.desc,
     version=setting.version,
-    contact={"name": "Thomas Hanke, Mat-O-Lab", "url": "https://github.com/Mat-O-Lab", "email": setting.admin_email},
+    contact={"name": setting.contact_name, "url": setting.org_site, "email": setting.admin_email},
     license_info={
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
     openapi_url=setting.openapi_url,
+    #openapi_tags=tags_metadata,
     docs_url=setting.docs_url,
-    redoc_url=None,    
-    #to disable highlighting for large output
-    #swagger_ui_parameters= {'syntaxHighlight': False},
+    redoc_url=None,
+    swagger_ui_parameters= {'syntaxHighlight': False},
+    #swagger_favicon_url="/static/resources/favicon.svg",
     middleware=middleware
+
 )
 
 app.mount("/static/", StaticFiles(directory='static', html=True), name="static")
@@ -90,7 +92,8 @@ async def index(request: Request):
         {"request": request,
         "start_form": start_form,
         "mapping_form": '',
-        "result": ''
+        "result": '',
+        "setting": setting
         }
     )
 
@@ -144,7 +147,8 @@ async def create_mapper(request: Request):
         {"request": request,
         "start_form": start_form,
         "mapping_form": mapping_form,
-        "result": ''
+        "result": '',
+        "setting": setting
         }
     )
 
@@ -194,7 +198,8 @@ async def map(request: Request):
         "mapping_form": '',
         'filename': filename,
         'payload': payload,
-        "result": result_string
+        "result": result_string,
+        "setting": setting
         }
     )
 
