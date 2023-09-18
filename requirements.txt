@@ -2,7 +2,8 @@ PyGithub
 PyYAML==3.13
 rdflib>=6.2.0
 WTForms
-pydantic
+pydantic>=2.0.0
+pydantic_settings
 starlette
 starlette-wtf
 jinja2
