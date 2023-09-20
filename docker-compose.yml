@@ -3,8 +3,12 @@ services:
     maptomethod:
       image: ghcr.io/mat-o-lab/maptomethod:latest
       environment:
-        APP_MODE: "production"
-        APP_SECRET: ${APP_SECRET}
+        - APP_MODE
+        - APP_SECRET
+        - ADMIN_NAME
+        - APP_NAME
+        - APP_VERSION
+        - APP_SOURCE
       container_name: maptomethod
       ports:
         - ${APP_PORT}:5000
