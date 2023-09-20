@@ -207,7 +207,7 @@ class QueryRequest(BaseModel):
     url: AnyUrl = Field('', title='Graph Url', description='Url to the sematic dataset to query')
     entity_classes: List = Field([], title='Class List', description='List of super classes to query for',)
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                         "url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "entity_classes": [
@@ -219,7 +219,7 @@ class QueryRequest(BaseModel):
 @app.post("/api/entities")
 def query_entities(request: QueryRequest):
     #translate urls in entity_classes list to URIRef objects
-    request.entity_classes=[ URIRef(url) for url in request.entity_classes]
+    request.entity_classes=[ URIRef(str(url)) for url in request.entity_classes]
     return maptomethod.query_entities(request.url, request.entity_classes)
 
 
