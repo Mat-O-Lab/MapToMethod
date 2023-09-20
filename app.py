@@ -220,7 +220,7 @@ class QueryRequest(BaseModel):
 def query_entities(request: QueryRequest):
     #translate urls in entity_classes list to URIRef objects
     request.entity_classes=[ URIRef(str(url)) for url in request.entity_classes]
-    return maptomethod.query_entities(request.url, request.entity_classes)
+    return maptomethod.query_entities(str(request.url), request.entity_classes)
 
 
 

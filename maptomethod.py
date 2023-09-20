@@ -81,7 +81,7 @@ def get_rdflib_Namespaces() -> dict:
                     pass
     return class_dict
 
-def parse_graph(url: AnyUrl, graph: Graph, format: str = '') -> Graph:
+def parse_graph(url: str, graph: Graph, format: str = '') -> Graph:
     """Parse a Graph from web url to rdflib graph object
 
     Args:
@@ -172,8 +172,8 @@ ContentToBearingRelation = BFO.RO_0010002
 class Mapper:
     def __init__(
             self,
-            data_url: AnyUrl,
-            method_url: AnyUrl,
+            data_url: str,
+            method_url: str,
             method_object_super_class_uris: List[URIRef] = [InformtionContentEntity,TemporalRegionClass],
             mapping_predicate_uri: URIRef = ContentToBearingRelation,
             data_subject_super_class_uris: List[URIRef] = [OA.Annotation,CSVW.Column],
@@ -250,7 +250,7 @@ class Mapper:
 
 
 
-def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
+def query_entities(data_url: str, entity_classes: List[URIRef]) -> dict:
     """Get all named individuals at data_url location that are of any type in entity_classes.
 
     Args:
@@ -298,7 +298,7 @@ def query_entities(data_url: AnyUrl, entity_classes: List[URIRef]) -> dict:
     logging.info('query resuls: {}'.format(data_entities))
     return data_entities, base_ns
 
-def get_mapping_output(data_url: AnyUrl, data_ns: AnyUrl, method_ns: AnyUrl, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
+def get_mapping_output(data_url: str, data_ns: str, method_ns: str, map_list: List, subjects_dict: dict, mapping_predicate_uri: URIRef) -> dict:
     """Get yaml definging the yarrrml mapping rules.
 
     Args:
