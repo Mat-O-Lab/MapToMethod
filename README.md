@@ -34,7 +34,6 @@ Build and start the container.
 ```bash
 docker-compose up
 ```
-
 ## jupyter notebook
 1. Open the notebook in [google colab](https://colab.research.google.com) or any other jupyter instance.
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Mat-O-Lab/MapToMethod/blob/main/maptomethod.ipynb)

@@ -1,65 +1,68 @@
-{
-  "ExperimentTimeInterval": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ExperimentTimeInterval"
+[
+  {
+    "ExperimentTimeInterval": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ExperimentTimeInterval"
+    },
+    "TestPlan": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestPlan"
+    },
+    "CaliperID": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CaliperID"
+    },
+    "ForceMeasurementCapability": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ForceMeasurementCapability"
+    },
+    "LoadCellID": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/LoadCellID"
+    },
+    "OperatorID": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/OperatorID"
+    },
+    "SpecimenID": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/SpecimenID"
+    },
+    "TestPlanName": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestPlanName"
+    },
+    "TraverseID": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TraverseID"
+    },
+    "DistanceMeasurementCapability": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/DistanceMeasurementCapability"
+    },
+    "CrossheadAccelerationSetPoint": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadAccelerationSetPoint"
+    },
+    "CrossheadSpeedSetPoint": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadSpeedSetPoint"
+    },
+    "CrossheadAccelerationSetPointValue": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadAccelerationSetPointValue"
+    },
+    "CrossheadSpeedSetPointValue": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadSpeedSetPointValue"
+    },
+    "ForceMeasurement": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ForceMeasurement"
+    },
+    "LengthMeasurement": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/LengthMeasurement"
+    },
+    "PreLoadSetPointValue": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/PreLoadSetPointValue"
+    },
+    "ThicknessMeasurement": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ThicknessMeasurement"
+    },
+    "WidthMeasurement": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/WidthMeasurement"
+    },
+    "ProjectID": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ProjectID"
+    },
+    "Measurements": {
+      "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/Measurements"
+    }
   },
-  "TestPlan": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestPlan"
-  },
-  "CaliperID": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CaliperID"
-  },
-  "ForceMeasurementCapability": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ForceMeasurementCapability"
-  },
-  "LoadCellID": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/LoadCellID"
-  },
-  "OperatorID": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/OperatorID"
-  },
-  "SpecimenID": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/SpecimenID"
-  },
-  "TestPlanName": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TestPlanName"
-  },
-  "TraverseID": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/TraverseID"
-  },
-  "DistanceMeasurementCapability": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/DistanceMeasurementCapability"
-  },
-  "CrossheadAccelerationSetPoint": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadAccelerationSetPoint"
-  },
-  "CrossheadSpeedSetPoint": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadSpeedSetPoint"
-  },
-  "CrossheadAccelerationSetPointValue": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadAccelerationSetPointValue"
-  },
-  "CrossheadSpeedSetPointValue": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/CrossheadSpeedSetPointValue"
-  },
-  "ForceMeasurement": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ForceMeasurement"
-  },
-  "LengthMeasurement": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/LengthMeasurement"
-  },
-  "PreLoadSetPointValue": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/PreLoadSetPointValue"
-  },
-  "ThicknessMeasurement": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ThicknessMeasurement"
-  },
-  "WidthMeasurement": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/WidthMeasurement"
-  },
-  "ProjectID": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/ProjectID"
-  },
-  "Measurements": {
-    "uri": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/Measurements"
-  }
-}
+  "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/"
+]
