@@ -232,7 +232,7 @@ class MappingRequest(BaseModel):
     method_super_classes: List = Field([maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass], title='Object Super Classes', description='List of object super classes to query for mapping partners in method graph.')
     map: dict = Field( title='Map Dict', description='Dict of with key as individual name of objects in knowledge graph and ids of indivuals in data metadata as values to create mapping rules for.',)
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                         "data_url": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
                         "method_url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
@@ -253,11 +253,11 @@ class YAMLResponse(StreamingResponse):
 def mapping(request: MappingRequest) -> StreamingResponse:
     try:
         result = maptomethod.Mapper(
-            request.data_url,
-            request.method_url,
-            method_object_super_class_uris=[URIRef(uri) for uri in request.method_super_classes],
-            mapping_predicate_uri=URIRef(request.predicate),
-            data_subject_super_class_uris=[URIRef(uri) for uri in request.data_super_classes],
+            str(request.data_url),
+            str(request.method_url),
+            method_object_super_class_uris=[URIRef(str(uri)) for uri in request.method_super_classes],
+            mapping_predicate_uri=URIRef(str(request.predicate)),
+            data_subject_super_class_uris=[URIRef(str(uri)) for uri in request.data_super_classes],
             maplist=request.map.items()
         ).to_pretty_yaml()
     except Exception as err:
