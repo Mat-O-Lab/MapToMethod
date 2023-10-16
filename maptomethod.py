@@ -40,11 +40,7 @@ sub_classes = prepareQuery("SELECT ?entity WHERE {?entity rdfs:subClassOf* ?pare
 
 BFO = Namespace("http://purl.obolibrary.org/obo/")
 BFO_URL = "http://purl.obolibrary.org/obo/bfo.owl"
-MSEO_URL = "./ontologies/mseo.ttl"
-CCO_URL = "./ontologies/cco.ttl"
 IOF_URL = "./ontologies/iof.rdf"
-MSEO = Namespace("https://purl.matolab.org/mseo/mid")
-CCO = Namespace("http://www.ontologyrepository.com/CommonCoreOntologies/")
 OA = Namespace("http://www.w3.org/ns/oa#")
 OA_URL = "http://www.w3.org/ns/oa.ttl"
 IOF = Namespace("https://spec.industrialontologies.org/ontology/core/Core/")
@@ -172,8 +168,6 @@ def get_methods() -> Dict:
 
 ontologies = get_rdflib_Namespaces()
 ontologies["BFO"] = {"uri": str(BFO), "src": BFO_URL}
-ontologies["MSEO"] = {"uri": str(MSEO), "src": MSEO_URL}
-ontologies["CCO"] = {"uri": str(CCO), "src": CCO_URL}
 ontologies["OA"] = {"uri": str(OA), "src": OA_URL}
 ontologies["CSVW"]["src"] = "https://www.w3.org/ns/csvw.ttl"
 ontologies["IOF"] = {"uri": str(IOF), "src": IOF_URL}
