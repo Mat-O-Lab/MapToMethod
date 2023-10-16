@@ -1,109 +1,140 @@
 # forms.py
 
-from starlette_wtf import StarletteForm
-from wtforms import URLField, SelectField, FieldList, FormField, Form
-from wtforms.validators import Optional, URL
-from wtforms.widgets import ListWidget, html_params
-from markupsafe import Markup
-from typing import List
 import uuid
+from typing import List
+
+from markupsafe import Markup
+from starlette_wtf import StarletteForm
+from wtforms import BooleanField, FieldList, Form, FormField, SelectField, URLField
+from wtforms.validators import URL, Optional
+from wtforms.widgets import ListWidget, html_params
 
 import maptomethod
 
+
 class ListWidgetBootstrap(ListWidget):
-    def __init__(self, html_tag="div", prefix_label=True, col_class=''):
+    def __init__(self, html_tag="div", prefix_label=True, col_class=""):
         assert html_tag in ("div", "a")
         self.html_tag = html_tag
         self.prefix_label = prefix_label
-        self.col_class=col_class
+        self.col_class = col_class
 
     def __call__(self, field, **kwargs):
         kwargs.setdefault("id", field.id)
         html = [f"<{self.html_tag} {html_params(**kwargs)}>"]
         for subfield in field:
             # if subfield we have to traverse once more down
-            if isinstance(subfield,Form):
+            if isinstance(subfield, Form):
                 for subsubfield in subfield:
                     if self.prefix_label:
-                        html.append(f"<div class={self.col_class}>{subsubfield.label} {subsubfield()}</div>")
+                        html.append(
+                            f"<div class={self.col_class}>{subsubfield.label} {subsubfield()}</div>"
+                        )
                     else:
-                        html.append(f"<div class={self.col_class}>{subsubfield()} {subsubfield.label}</div>")
+                        html.append(
+                            f"<div class={self.col_class}>{subsubfield()} {subsubfield.label}</div>"
+                        )
             # print(dir(subfield))
             else:
                 if self.prefix_label:
-                    html.append(f"<div class={self.col_class}>{subfield.label} {subfield()}</div>")
+                    html.append(
+                        f"<div class={self.col_class}>{subfield.label} {subfield()}</div>"
+                    )
                 else:
-                    html.append(f"<div class={self.col_class}>{subfield()} {subfield.label}</div>")
+                    html.append(
+                        f"<div class={self.col_class}>{subfield()} {subfield.label}</div>"
+                    )
         html.append("</%s>" % self.html_tag)
         return Markup("".join(html))
 
 
-
 class AdvancedForm(Form):
     data_subject_super_class_uris = FieldList(
-        URLField('URI', validators=[Optional(), URL()], 
-        render_kw={"class":"form-control"}),
+        URLField(
+            "URI", validators=[Optional(), URL()], render_kw={"class": "form-control"}
+        ),
         min_entries=3,
-        default=[maptomethod.OA.Annotation,maptomethod.CSVW.Column],
-        widget=ListWidgetBootstrap(col_class='col-sm-4'),
-        render_kw={"class":"row"},
-        description='URI of superclass to query for subjects in data.'
-        )
-    mapping_predicate_uri = URLField('URL Mapping Predicat',
-        #validators=[DataRequired(),URL()],
-        render_kw={"class":"form-control"},
+        default=[maptomethod.OA.Annotation, maptomethod.CSVW.Column],
+        widget=ListWidgetBootstrap(col_class="col-sm-4"),
+        render_kw={"class": "row"},
+        description="URI of superclass to query for subjects in data.",
+    )
+    mapping_predicate_uri = URLField(
+        "URL Mapping Predicat",
+        # validators=[DataRequired(),URL()],
+        render_kw={"class": "form-control"},
         default=maptomethod.ContentToBearingRelation,
-        description='URI of object property to use as predicate.'
-        )
+        description="URI of object property to use as predicate.",
+    )
     method_object_super_class_uris = FieldList(
-        URLField('URI', validators=[Optional(), URL()], 
-        render_kw={"class":"form-control"}),
+        URLField(
+            "URI", validators=[Optional(), URL()], render_kw={"class": "form-control"}
+        ),
         min_entries=3,
-        default=[maptomethod.InformtionContentEntity,maptomethod.TemporalRegionClass],
-        widget=ListWidgetBootstrap(col_class='col-sm-4'),
-        render_kw={"class":"row"},
-        description='URI of superclass to query for objects in method.'
-        )
+        default=[maptomethod.InformtionContentEntity, maptomethod.TemporalRegionClass],
+        widget=ListWidgetBootstrap(col_class="col-sm-4"),
+        render_kw={"class": "row"},
+        description="URI of superclass to query for objects in method.",
+    )
+
 
 class StartForm(StarletteForm):
-    data_url = URLField('URL Meta Data',
-        #validators=[DataRequired(),URL()],
-        render_kw={"placeholder": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
-        "class":"form-control"},
-        description='Paste URL to meta data json file create from CSVToCSVW'
+    data_url = URLField(
+        "URL Meta Data",
+        # validators=[DataRequired(),URL()],
+        render_kw={
+            "placeholder": "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+            "class": "form-control",
+        },
+        description="Paste URL to meta data json file create from CSVToCSVW",
     )
     method_url = URLField(
-        'URL Method Data',
-        render_kw={"class":"form-control"},
+        "URL Method Data",
+        render_kw={"class": "form-control"},
         validators=[Optional(), URL()],
-        description='Paste URL to method graph create with MSEO',
+        description="Paste URL to method graph create with MSEO",
     )
     method_sel = SelectField(
-        'Method Graph',
-        render_kw={"class":"form-control"},
-        #[(v, k) for k, v in app.methods_dict.items()]
+        "Method Graph",
+        render_kw={"class": "form-control"},
+        # [(v, k) for k, v in app.methods_dict.items()]
         choices=[],
-        description=('Alternativly select a method graph'
-                     'from https://github.com/Mat-O-Lab/MSEO/tree/main/methods'
-                     )
+        description=(
+            "Alternativly select a method graph"
+            "from https://github.com/Mat-O-Lab/MSEO/tree/main/methods"
+        ),
     )
-    advanced=FormField(AdvancedForm,
-        render_kw={"class":"collapse"},
-        widget=ListWidgetBootstrap())
-    
+    # disabled uing d-none bootrap class
+    use_template_rowwise = BooleanField(
+        "Duplicate Template for Table Data",
+        render_kw={
+            "class": "form-check form-check-input form-control-lg",
+            "role": "switch",
+        },
+        description="Check to duplicate the method template for each row in the table.",
+        default=False,
+    )
+    advanced = FormField(
+        AdvancedForm, render_kw={"class": "collapse"}, widget=ListWidgetBootstrap()
+    )
+
 
 class SelectForm(Form):
-    select = SelectField("Placeholder", default=(
-        0, "None"), choices=[], validate_choice=False, render_kw={"class":"form-control col-s-3"})
+    select = SelectField(
+        "Placeholder",
+        default=(0, "None"),
+        choices=[],
+        validate_choice=False,
+        render_kw={"class": "form-control col-s-3"},
+    )
 
 
 class MappingFormList(StarletteForm):
     assignments = FieldList(
-        FormField(SelectForm,
-        render_kw={"class":"form-control"}),
-        widget=ListWidgetBootstrap(col_class='col-sm-4'),
-        render_kw={"class":"row"},
-        )
+        FormField(SelectForm, render_kw={"class": "form-control"}),
+        widget=ListWidgetBootstrap(col_class="col-sm-4"),
+        render_kw={"class": "row"},
+    )
 
 
 def get_select_entries(names: List, choices: List) -> List[SelectForm]:
@@ -119,7 +150,7 @@ def get_select_entries(names: List, choices: List) -> List[SelectForm]:
     """
     all_select_items = []
     for name in names:
-        _id = uuid.uuid1()   # allows for multiple selects
+        _id = uuid.uuid1()  # allows for multiple selects
         select_form = SelectForm()
         select_form.select.label = name
         select_form.select.name = name
