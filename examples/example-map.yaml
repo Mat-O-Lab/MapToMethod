@@ -8,6 +8,7 @@ base: http://purl.matolab.org/mseo/mappings/
 sources:
   data_entities: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
     iterator: '$..[*]', referenceFormulation: jsonpath}
+use_template_rowwise: 'false'
 mappings:
   SpecimenID:
     sources: [data_entities]
