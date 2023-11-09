@@ -15,5 +15,5 @@ class Setting(BaseSettings):
     source: str = str(
         os.environ.get("APP_SOURCE", "https://github.com/Mat-O-Lab/MapToMethod")
     )
-    desc: str = "Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository."
+    desc: str = "Tool to map content of JSON-LD douments (for example output of [CSVtoCSVW](https://github.com/Mat-O-Lab/CSVToCSVW) to Entities in knowledge graphs by creating mapping rules with conditions in [YARRRML](https://rml.io/yarrrml) format."
     org_site: str = "https://mat-o-lab.github.io/OrgSite"

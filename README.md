@@ -2,7 +2,7 @@
 [![Publish Docker image](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/PublishContainer.yml/badge.svg)](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/PublishContainer.yml)
 [![Test Examples](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/TestExamples.yml/badge.svg?branch=main&event=push)](https://github.com/Mat-O-Lab/MapToMethod/actions/workflows/TestExamples.yml)
 
-Tool to map content of JSON-LD files (output of CSVtoCSVW) describing CSV files to Information Content Entities in knowledge graphs describing methods in the method folder of the MSEO Ontology repository at https://github.com/Mat-O-Lab/MSEO.
+Tool to map content of JSON-LD douments (for example output of [CSVtoCSVW](https://github.com/Mat-O-Lab/CSVToCSVW) to Entities in knowledge graphs by creating mapping rules with conditions in [YARRRML](https://rml.io/yarrrml) format.
 
 Demo online at here: http://maptomethod.matolab.org
 
