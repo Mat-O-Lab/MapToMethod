@@ -10,7 +10,7 @@ import uvicorn
 import yaml
 from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import AnyUrl, BaseModel, Field
@@ -112,6 +112,7 @@ async def index(request: Request):
 
 @app.post("/create_mapper", response_class=HTMLResponse, include_in_schema=False)
 async def create_mapper(request: Request):
+    authorization=request.headers.get('Authorization',None)
     start_form = await forms.StartForm.from_formdata(request)
     start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
     mapping_form = ""
@@ -146,8 +147,7 @@ async def create_mapper(request: Request):
         )
         request.session["mapping_object_class_uris"] = mapping_object_class_uris
 
-        try:
-            mapper = maptomethod.Mapper(
+        mapper = maptomethod.Mapper(
                 data_url=data_url,
                 method_url=method_url,
                 use_template_rowwise=request.session["use_template_rowwise"],
@@ -158,10 +158,24 @@ async def create_mapper(request: Request):
                 method_object_super_class_uris=[
                     URIRef(uri) for uri in mapping_object_class_uris
                 ],
+                authorization=authorization
             )
-            flash(request, str(mapper), "info")
-        except Exception as err:
-            flash(request, str(err), "error")
+        # try:
+        #     mapper = maptomethod.Mapper(
+        #         data_url=data_url,
+        #         method_url=method_url,
+        #         use_template_rowwise=request.session["use_template_rowwise"],
+        #         mapping_predicate_uri=URIRef(mapping_predicate_uri),
+        #         data_subject_super_class_uris=[
+        #             URIRef(uri) for uri in mapping_subject_class_uris
+        #         ],
+        #         method_object_super_class_uris=[
+        #             URIRef(uri) for uri in mapping_object_class_uris
+        #         ],
+        #     )
+        #     flash(request, str(mapper), "info")
+        # except Exception as err:
+        #     flash(request, str(err), "error")
         print(mapper.objects.keys())
         # only named instances in the data can be mapped
         info_choices = [
@@ -187,6 +201,7 @@ async def create_mapper(request: Request):
 
 @app.post("/map", response_class=HTMLResponse, include_in_schema=False)
 async def map(request: Request):
+    authorization=request.headers.get('Authorization',None)
     formdata = await request.form()
     data_url = request.session.get("data_url", None)
     method_url = request.session.get("method_url", None)
@@ -221,6 +236,7 @@ async def map(request: Request):
             URIRef(uri) for uri in mapping_object_class_uris
         ],
         maplist=maplist,
+        authorization=authorization
     ) as mapper:
         result = mapper.to_pretty_yaml()
         filename = result["filename"]
@@ -266,10 +282,11 @@ class QueryRequest(BaseModel):
 
 
 @app.post("/api/entities")
-def query_entities(request: QueryRequest):
+def query_entities(request: QueryRequest, req: Request):
+    authorization=req.headers.get('Authorization',None)
     # translate urls in entity_classes list to URIRef objects
     request.entity_classes = [URIRef(str(url)) for url in request.entity_classes]
-    return maptomethod.query_entities(str(request.url), request.entity_classes)
+    return maptomethod.query_entities(str(request.url), request.entity_classes, authorization)
 
 
 class MappingRequest(BaseModel):
@@ -330,7 +347,8 @@ class YAMLResponse(StreamingResponse):
 
 
 @app.post("/api/mapping", response_class=YAMLResponse)
-def mapping(request: MappingRequest) -> StreamingResponse:
+def mapping(request: MappingRequest, req: Request) -> StreamingResponse:
+    authorization=req.headers.get('Authorization',None)
     try:
         result = maptomethod.Mapper(
             str(request.data_url),
@@ -344,6 +362,7 @@ def mapping(request: MappingRequest) -> StreamingResponse:
                 URIRef(str(uri)) for uri in request.data_super_classes
             ],
             maplist=request.map.items(),
+            authorization=authorization
         ).to_pretty_yaml()
     except Exception as err:
         print(err)
@@ -386,3 +405,7 @@ if __name__ == "__main__":
         access_log=access_log,
         log_config=config,
     )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(content={"message": exc.detail}, status_code=exc.status_code)

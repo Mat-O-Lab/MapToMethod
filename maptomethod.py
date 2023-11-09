@@ -7,9 +7,11 @@ from re import search as re_search
 from re import split as re_split
 from tokenize import Name
 from typing import Dict, List, Tuple
-from urllib.parse import unquote, urlparse
-from urllib.request import urlopen
-
+from urllib.parse import unquote, urlparse, urljoin
+from urllib.request import urlopen, pathname2url
+import requests
+from fastapi import HTTPException
+import os
 import github
 from pydantic import AnyUrl
 from rdflib import Graph, Namespace, URIRef
@@ -74,30 +76,40 @@ def get_rdflib_Namespaces() -> dict:
                     pass
     return class_dict
 
+def open_file(uri: AnyUrl,authorization= None) -> Tuple["filedata": str, "filename": str]:
+    try:
+        uri_parsed = urlparse(uri)
+        #print(uri_parsed, urljoin('file:', pathname2url(os.path.abspath(uri_parsed.path))))
+    except:
+        raise HTTPException(status_code=400, detail=uri + " is not an uri - if local file add file:// as prefix")
+    else:
+        if uri_parsed.path.startswith('.'):
+            #is local file path create a proper file url
+            uri_parsed = urlparse(urljoin('file:', pathname2url(os.path.abspath(uri_parsed.path))))
+        filename = unquote(uri_parsed.path).rsplit("/download/upload")[0].split("/")[-1]
+        if uri_parsed.scheme in ["https", "http"]:
+            # r = urlopen(uri)
+            s= requests.Session()
+            s.headers.update({"Authorization": authorization})
+            r = s.get(uri, allow_redirects=True, stream=True)
+            
+            #r.raise_for_status()
+            if r.status_code!=200:
+                #logging.debug(r.content)
+                raise HTTPException(status_code=r.status_code, detail="cant get file at {}".format(uri))
+            filedata = r.content
+            # charset=r.info().get_content_charset()
+            # if not charset:
+            #     charset='utf-8'
+            # filedata = r.read().decode(charset)
+        elif uri_parsed.scheme == "file":
+            filedata = open(unquote(uri_parsed.path), "rb").read()
+        else:
+            raise  HTTPException(status_code=400,detail="unknown scheme {}".format(uri_parsed.scheme))
+        return filedata, filename
 
-def parse_graph(url: str, graph: Graph, format: str = "") -> Graph:
-    """Parse a Graph from web url to rdflib graph object
 
-    Args:
-        url (AnyUrl): Url to an web ressource
-        graph (Graph): Existing Rdflib Graph object to parse data to.
-
-    Returns:
-        Graph: Rdflib graph Object
-    """
-    parsed_url = urlparse(url)
-    if not format:
-        format = guess_format(parsed_url.path)
-    print(parsed_url.path, format)
-    if parsed_url.scheme in ["https", "http"]:
-        graph.parse(urlopen(parsed_url.geturl()).read(), format=format)
-
-    elif parsed_url.scheme in ["file", ""]:
-        graph.parse(parsed_url.path, format=format)
-    return graph
-
-
-def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
+def get_all_sub_classes(superclass: URIRef, authorization=None) -> List[URIRef]:
     """Gets all subclasses of a given class.
 
     Args:
@@ -123,7 +135,10 @@ def get_all_sub_classes(superclass: URIRef) -> List[URIRef]:
                 superclass, ontology_url
             )
         )
-        ontology = parse_graph(ontology_url, graph=Graph())
+        onto_data, onto_name = open_file(ontology_url, authorization)
+        ontology = Graph()
+        # parse template and add mapping results
+        ontology.parse(data=onto_data, format=guess_format(onto_name))
         results = list(
             ontology.query(
                 sub_classes,
@@ -194,6 +209,7 @@ class Mapper:
         subjects: List[URIRef] = [],
         objects: List[URIRef] = [],
         maplist: List[Tuple[str, str]] = [],
+        authorization=None
     ):
         """Mapper Class for creating Rule based yarrrml mappings for data metadata to link to a knowledge graph.
 
@@ -206,6 +222,7 @@ class Mapper:
             subjects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the data metadata. Defaults to [].
             objects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the knowledge grph. Defaults to [].
             maplist (List[Tuple[str, str]], optional): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for. Defaults to [].
+            authorization (str): Json strint to use as Authorization Header on requests to external urls.
         """
         logging.info(
             "Following Namespaces available to Mapper: {}".format(ontologies.keys())
@@ -214,10 +231,11 @@ class Mapper:
         self.method_url = method_url
         self.use_template_rowwise = use_template_rowwise
         self.mapping_predicate_uri = mapping_predicate_uri
+        self.authorization=authorization
         # file_data, file_name =open_file(data_url)
         if not objects:
             self.objects, base_ns_objects = query_entities(
-                self.method_url, method_object_super_class_uris
+                self.method_url, method_object_super_class_uris, self.authorization
             )
             self.base_ns_objects = base_ns_objects
         else:
@@ -227,7 +245,7 @@ class Mapper:
 
         if not subjects:
             self.subjects, base_ns_subjects = query_entities(
-                self.data_url, data_subject_super_class_uris
+                self.data_url, data_subject_super_class_uris, self.authorization
             )
             self.base_ns_subjects = base_ns_subjects
         else:
@@ -275,7 +293,7 @@ class Mapper:
         return result
 
 
-def query_entities(data_url: str, entity_classes: List[URIRef]) -> dict:
+def query_entities(data_url: str, entity_classes: List[URIRef],authorization=None) -> dict:
     """Get all named individuals at data_url location that are of any type in entity_classes.
 
     Args:
@@ -295,7 +313,10 @@ def query_entities(data_url: str, entity_classes: List[URIRef]) -> dict:
         format = "json-ld"
     else:
         format = guess_format(data_url)
-    data = parse_graph(data_url, graph=Graph(), format=format)
+    data_data, data_name = open_file(data_url, authorization)
+    data = Graph()
+    # parse template and add mapping results
+    data.parse(data=data_data, format=format)
     # find base iri if any
     print(list(data.namespaces()))
     base_ns = None
