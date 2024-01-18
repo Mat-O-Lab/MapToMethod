@@ -28,10 +28,9 @@ setting = settings.Setting()
 
 
 config_name = os.environ.get("APP_MODE") or "development"
-
 middleware = [
     Middleware(
-        SessionMiddleware, secret_key=os.environ.get("APP_SECRET", "changemeNOW")
+        SessionMiddleware, secret_key=os.environ.get("APP_SECRET", "changemeNOW"),
     ),
     # Middleware(CSRFProtectMiddleware, csrf_secret=os.environ.get('APP_SECRET','changemeNOW')),
     Middleware(
@@ -93,11 +92,11 @@ def get_flashed_messages(request: Request):
 
 templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
-
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
     start_form = await forms.StartForm.from_formdata(request)
     start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
+    #request.session.clear()
     return templates.TemplateResponse(
         "index.html",
         {
@@ -109,11 +108,16 @@ async def index(request: Request):
         },
     )
 
-
 @app.post("/create_mapper", response_class=HTMLResponse, include_in_schema=False)
 async def create_mapper(request: Request):
     authorization=request.headers.get('Authorization',None)
+    if authorization:
+        logging.debug('got authorization header')
+    logging.debug(await request.body())
+
     start_form = await forms.StartForm.from_formdata(request)
+    logging.debug(start_form.data)
+
     start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
     mapping_form = ""
     logging.info("create mapping")
@@ -147,7 +151,8 @@ async def create_mapper(request: Request):
         )
         request.session["mapping_object_class_uris"] = mapping_object_class_uris
 
-        mapper = maptomethod.Mapper(
+        try:
+            mapper = maptomethod.Mapper(
                 data_url=data_url,
                 method_url=method_url,
                 use_template_rowwise=request.session["use_template_rowwise"],
@@ -160,33 +165,25 @@ async def create_mapper(request: Request):
                 ],
                 authorization=authorization
             )
-        # try:
-        #     mapper = maptomethod.Mapper(
-        #         data_url=data_url,
-        #         method_url=method_url,
-        #         use_template_rowwise=request.session["use_template_rowwise"],
-        #         mapping_predicate_uri=URIRef(mapping_predicate_uri),
-        #         data_subject_super_class_uris=[
-        #             URIRef(uri) for uri in mapping_subject_class_uris
-        #         ],
-        #         method_object_super_class_uris=[
-        #             URIRef(uri) for uri in mapping_object_class_uris
-        #         ],
-        #     )
-        #     flash(request, str(mapper), "info")
-        # except Exception as err:
-        #     flash(request, str(err), "error")
-        print(mapper.objects.keys())
+            flash(request, str(mapper), "info")
+            #flash(request, str(mapper.subjects), "info")
+        except Exception as err:
+            flash(request, str(err), "error")
+        #print(mapper.objects.keys())
         # only named instances in the data can be mapped
-        info_choices = [
-            (id, value["text"])
-            for id, value in mapper.subjects.items()
-            if "text" in value.keys()
-        ]
-        info_choices.insert(0, (None, "None"))
-        select_forms = forms.get_select_entries(mapper.objects.keys(), info_choices)
-        mapping_form = await forms.MappingFormList.from_formdata(request)
-        mapping_form.assignments.entries = select_forms
+        else:
+            info_choices = [
+                (id, value["text"])
+                for id, value in mapper.subjects.items()
+                if "text" in value.keys()
+            ]
+            info_choices.insert(0, (None, "None"))
+            select_forms = forms.get_select_entries(mapper.objects.keys(), info_choices)
+            mapping_form = await forms.MappingFormList.from_formdata(request)
+            mapping_form.assignments.entries = select_forms
+    request.session['auth']=authorization
+    logging.debug('session: {}'.format(request.session))
+    
     return templates.TemplateResponse(
         "index.html",
         {
@@ -201,11 +198,20 @@ async def create_mapper(request: Request):
 
 @app.post("/map", response_class=HTMLResponse, include_in_schema=False)
 async def map(request: Request):
-    authorization=request.headers.get('Authorization',None)
+    authorization=request.headers.get('Authorization',None) or request.session.get('auth',None)
+    if authorization:
+        logging.debug('got authorization header')
+    logging.debug('get map')
+    logging.debug('session: {}'.format(request.session))
+
+
+    #logging.debug(request.data)
     formdata = await request.form()
     data_url = request.session.get("data_url", None)
     method_url = request.session.get("method_url", None)
     method_sel = request.session.get("method_url", None)
+    subjects = request.session.get("subjects", None)
+    objects = request.session.get("objects", None)
     use_template_rowwise = request.session.get("use_template_rowwise", False)
     mapping_subject_class_uris = request.session.get("mapping_subject_class_uris", None)
     mapping_predicate_uri = request.session.get("mapping_predicate_uri", None)
@@ -224,6 +230,8 @@ async def map(request: Request):
     maplist = [(k, v) for k, v in select_dict.items() if v != "None"]
     logging.info("Creating mapping file for mapping list: {}".format(maplist))
     request.session["maplist"] = maplist
+    logging.debug('subjects: {}'.format(subjects))
+    logging.debug('objects: {}'.format(objects))
     with maptomethod.Mapper(
         data_url=data_url,
         method_url=method_url,
@@ -236,13 +244,15 @@ async def map(request: Request):
             URIRef(uri) for uri in mapping_object_class_uris
         ],
         maplist=maplist,
+        subjects=subjects,
+        objects=objects,
         authorization=authorization
     ) as mapper:
         result = mapper.to_pretty_yaml()
         filename = result["filename"]
         result_string = result["filedata"]
-        print(type(result_string))
-        print(result_string)
+        #print(type(result_string))
+        #print(result_string)
         b64 = base64.b64encode(result_string.encode())
         payload = b64.decode()
     return templates.TemplateResponse(
@@ -349,6 +359,9 @@ class YAMLResponse(StreamingResponse):
 @app.post("/api/mapping", response_class=YAMLResponse)
 def mapping(request: MappingRequest, req: Request) -> StreamingResponse:
     authorization=req.headers.get('Authorization',None)
+    if authorization:
+        logging.debug('got authorization header')
+    
     try:
         result = maptomethod.Mapper(
             str(request.data_url),

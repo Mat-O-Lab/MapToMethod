@@ -232,6 +232,7 @@ class Mapper:
         self.use_template_rowwise = use_template_rowwise
         self.mapping_predicate_uri = mapping_predicate_uri
         self.authorization=authorization
+        logging.debug("checking objects and subjects populated")
         # file_data, file_name =open_file(data_url)
         if not objects:
             self.objects, base_ns_objects = query_entities(
@@ -346,7 +347,7 @@ def query_entities(data_url: str, entity_classes: List[URIRef],authorization=Non
             data_entities[name] = {
                 "uri": str(s),
                 "property": strip_namespace(p),
-                "text": o,
+                "text": str(o),
             }
         else:
             data_entities[name] = {"uri": str(s)}
