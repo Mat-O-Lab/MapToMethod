@@ -43,9 +43,14 @@ sub_classes = prepareQuery("SELECT ?entity WHERE {?entity rdfs:subClassOf* ?pare
 BFO = Namespace("http://purl.obolibrary.org/obo/")
 BFO_URL = "http://purl.obolibrary.org/obo/bfo.owl"
 IOF_URL = "./ontologies/iof.rdf"
+IOF = Namespace("https://spec.industrialontologies.org/ontology/core/Core/")
+IOF_QUAL_URL = "https://github.com/iofoundry/ontology/raw/'qualities'/qualities/qualities.rdf"
+IOF_QUAL = Namespace("https://spec.industrialontologies.org/ontology/qualities/")
+IOF_MAT_URL = "https://github.com/iofoundry/ontology/raw/materials/materials/Materials.rdf"
+IOF_MAT = Namespace("https://spec.industrialontologies.org/ontology/materials/Materials/")
+
 OA = Namespace("http://www.w3.org/ns/oa#")
 OA_URL = "http://www.w3.org/ns/oa.ttl"
-IOF = Namespace("https://spec.industrialontologies.org/ontology/core/Core/")
 
 
 def strip_namespace(term: URIRef) -> str:
@@ -75,6 +80,15 @@ def get_rdflib_Namespaces() -> dict:
                 except:
                     pass
     return class_dict
+
+ontologies = get_rdflib_Namespaces()
+ontologies["BFO"] = {"uri": str(BFO), "src": BFO_URL}
+ontologies["OA"] = {"uri": str(OA), "src": OA_URL}
+ontologies["CSVW"]["src"] = "https://www.w3.org/ns/csvw.ttl"
+ontologies["IOF"] = {"uri": str(IOF), "src": IOF_URL}
+ontologies["IOF-MAT"] = {"uri": str(IOF_MAT), "src": IOF_MAT_URL}
+ontologies["IOF-QUAL"] = {"uri": str(IOF_QUAL), "src": IOF_QUAL_URL}
+
 
 def open_file(uri: AnyUrl,authorization= None) -> Tuple["filedata": str, "filename": str]:
     try:
@@ -127,7 +141,7 @@ def get_all_sub_classes(superclass: URIRef, authorization=None) -> List[URIRef]:
         for key, item in ontologies.items()
         if ontology_url in item["uri"]
     ]
-    # print(ontology_url,result)
+    #print(ontology_url,result)
     if result:
         ontology_url = result[0][1]
         logging.info(
@@ -180,12 +194,6 @@ def get_methods() -> Dict:
     logging.info("Following methods are available as select: {}".format(methods))
     return methods
 
-
-ontologies = get_rdflib_Namespaces()
-ontologies["BFO"] = {"uri": str(BFO), "src": BFO_URL}
-ontologies["OA"] = {"uri": str(OA), "src": OA_URL}
-ontologies["CSVW"]["src"] = "https://www.w3.org/ns/csvw.ttl"
-ontologies["IOF"] = {"uri": str(IOF), "src": IOF_URL}
 
 
 # InformtionContentEntity = CCO.InformationContentEntity
