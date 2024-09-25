@@ -17,3 +17,4 @@ class Setting(BaseSettings):
     )
     desc: str = "Tool to map content of JSON-LD douments (for example output of [CSVtoCSVW](https://github.com/Mat-O-Lab/CSVToCSVW) to Entities in knowledge graphs by creating mapping rules with conditions in [YARRRML](https://rml.io/yarrrml) format."
     org_site: str = "https://mat-o-lab.github.io/OrgSite"
+    server: str = os.environ.get("SERVER_URL") or "https://maptomethod.matolab.org"
