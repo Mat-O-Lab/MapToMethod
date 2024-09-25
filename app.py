@@ -63,6 +63,11 @@ app = FastAPI(
     redoc_url=None,
     swagger_ui_parameters={"syntaxHighlight": False},
     # swagger_favicon_url="/static/resources/favicon.svg",
+    servers=[
+        {"url": setting.server, "description": "Production environment"},
+    ],
+    # root_path="/api/v1",
+    root_path_in_servers=False,
     middleware=middleware,
 )
 
