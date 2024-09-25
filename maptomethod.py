@@ -1,6 +1,5 @@
 import inspect
 import logging
-import ssl
 import sys
 from collections import OrderedDict
 from re import search as re_search
@@ -22,8 +21,9 @@ from yaml import Dumper, Loader, dump
 from yaml.representer import SafeRepresenter
 from yaml.resolver import BaseResolver
 
-# disable ssl verification
-ssl._create_default_https_context = ssl._create_unverified_context
+SSL_VERIFY = os.getenv("SSL_VERIFY", "True").lower() in ("true", "1", "t")
+if not SSL_VERIFY:
+    requests.packages.urllib3.disable_warnings()
 
 
 def dict_representer(dumper, data):
@@ -104,6 +104,7 @@ def open_file(uri: AnyUrl,authorization= None) -> Tuple["filedata": str, "filena
         if uri_parsed.scheme in ["https", "http"]:
             # r = urlopen(uri)
             s= requests.Session()
+            s.verify = SSL_VERIFY
             s.headers.update({"Authorization": authorization})
             r = s.get(uri, allow_redirects=True, stream=True)
             
