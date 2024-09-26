@@ -44,10 +44,16 @@ BFO = Namespace("http://purl.obolibrary.org/obo/")
 BFO_URL = "http://purl.obolibrary.org/obo/bfo.owl"
 IOF_URL = "./ontologies/iof.rdf"
 IOF = Namespace("https://spec.industrialontologies.org/ontology/core/Core/")
-IOF_QUAL_URL = "https://github.com/iofoundry/ontology/raw/'qualities'/qualities/qualities.rdf"
+IOF_QUAL_URL = (
+    "https://github.com/iofoundry/ontology/raw/'qualities'/qualities/qualities.rdf"
+)
 IOF_QUAL = Namespace("https://spec.industrialontologies.org/ontology/qualities/")
-IOF_MAT_URL = "https://github.com/iofoundry/ontology/raw/materials/materials/Materials.rdf"
-IOF_MAT = Namespace("https://spec.industrialontologies.org/ontology/materials/Materials/")
+IOF_MAT_URL = (
+    "https://github.com/iofoundry/ontology/raw/materials/materials/Materials.rdf"
+)
+IOF_MAT = Namespace(
+    "https://spec.industrialontologies.org/ontology/materials/Materials/"
+)
 
 OA = Namespace("http://www.w3.org/ns/oa#")
 OA_URL = "http://www.w3.org/ns/oa.ttl"
@@ -81,6 +87,7 @@ def get_rdflib_Namespaces() -> dict:
                     pass
     return class_dict
 
+
 ontologies = get_rdflib_Namespaces()
 ontologies["BFO"] = {"uri": str(BFO), "src": BFO_URL}
 ontologies["OA"] = {"uri": str(OA), "src": OA_URL}
@@ -90,28 +97,34 @@ ontologies["IOF-MAT"] = {"uri": str(IOF_MAT), "src": IOF_MAT_URL}
 ontologies["IOF-QUAL"] = {"uri": str(IOF_QUAL), "src": IOF_QUAL_URL}
 
 
-def open_file(uri: AnyUrl,authorization= None) -> Tuple["filedata": str, "filename": str]:
+def open_file(uri: AnyUrl, authorization=None) -> Tuple["filedata":str, "filename":str]:
     try:
         uri_parsed = urlparse(uri)
-        #print(uri_parsed, urljoin('file:', pathname2url(os.path.abspath(uri_parsed.path))))
+        # print(uri_parsed, urljoin('file:', pathname2url(os.path.abspath(uri_parsed.path))))
     except:
-        raise HTTPException(status_code=400, detail=uri + " is not an uri - if local file add file:// as prefix")
+        raise HTTPException(
+            status_code=400,
+            detail=uri + " is not an uri - if local file add file:// as prefix",
+        )
     else:
-        if uri_parsed.path.startswith('.'):
-            #is local file path create a proper file url
-            uri_parsed = urlparse(urljoin('file:', pathname2url(os.path.abspath(uri_parsed.path))))
+        if uri_parsed.path.startswith("."):
+            # is local file path create a proper file url
+            uri_parsed = urlparse(
+                urljoin("file:", pathname2url(os.path.abspath(uri_parsed.path)))
+            )
         filename = unquote(uri_parsed.path).rsplit("/download/upload")[0].split("/")[-1]
         if uri_parsed.scheme in ["https", "http"]:
             # r = urlopen(uri)
-            s= requests.Session()
+            s = requests.Session()
             s.verify = SSL_VERIFY
             s.headers.update({"Authorization": authorization})
             r = s.get(uri, allow_redirects=True, stream=True)
-            
-            #r.raise_for_status()
-            if r.status_code!=200:
-                #logging.debug(r.content)
-                raise HTTPException(status_code=r.status_code, detail="cant get file at {}".format(uri))
+            # print(r.content)
+            if r.status_code != 200:
+                # logging.info(r.content)
+                raise HTTPException(
+                    status_code=r.status_code, detail="cant get file at {}".format(uri)
+                )
             filedata = r.content
             # charset=r.info().get_content_charset()
             # if not charset:
@@ -120,7 +133,9 @@ def open_file(uri: AnyUrl,authorization= None) -> Tuple["filedata": str, "filena
         elif uri_parsed.scheme == "file":
             filedata = open(unquote(uri_parsed.path), "rb").read()
         else:
-            raise  HTTPException(status_code=400,detail="unknown scheme {}".format(uri_parsed.scheme))
+            raise HTTPException(
+                status_code=400, detail="unknown scheme {}".format(uri_parsed.scheme)
+            )
         return filedata, filename
 
 
@@ -142,7 +157,7 @@ def get_all_sub_classes(superclass: URIRef, authorization=None) -> List[URIRef]:
         for key, item in ontologies.items()
         if ontology_url in item["uri"]
     ]
-    #print(ontology_url,result)
+    # print(ontology_url,result)
     if result:
         ontology_url = result[0][1]
         logging.info(
@@ -196,7 +211,6 @@ def get_methods() -> Dict:
     return methods
 
 
-
 # InformtionContentEntity = CCO.InformationContentEntity
 InformtionContentEntity = IOF.InformationContentEntity
 TemporalRegionClass = BFO.BFO_0000008
@@ -218,7 +232,7 @@ class Mapper:
         subjects: List[URIRef] = [],
         objects: List[URIRef] = [],
         maplist: List[Tuple[str, str]] = [],
-        authorization=None
+        authorization=None,
     ):
         """Mapper Class for creating Rule based yarrrml mappings for data metadata to link to a knowledge graph.
 
@@ -240,7 +254,7 @@ class Mapper:
         self.method_url = method_url
         self.use_template_rowwise = use_template_rowwise
         self.mapping_predicate_uri = mapping_predicate_uri
-        self.authorization=authorization
+        self.authorization = authorization
         logging.debug("checking objects and subjects populated")
         # file_data, file_name =open_file(data_url)
         if not objects:
@@ -303,7 +317,9 @@ class Mapper:
         return result
 
 
-def query_entities(data_url: str, entity_classes: List[URIRef],authorization=None) -> dict:
+def query_entities(
+    data_url: str, entity_classes: List[URIRef], authorization=None
+) -> dict:
     """Get all named individuals at data_url location that are of any type in entity_classes.
 
     Args:
@@ -313,7 +329,9 @@ def query_entities(data_url: str, entity_classes: List[URIRef],authorization=Non
     Returns:
         dict: Dict with short entity IRI as key
     """
-    subclasses = [get_all_sub_classes(superclass) for superclass in entity_classes]
+    subclasses = [
+        get_all_sub_classes(superclass, authorization) for superclass in entity_classes
+    ]
     class_list = [item for sublist in subclasses for item in sublist]
     logging.info(
         "query data at url: {}\nfor entitys classes: {}".format(data_url, class_list)
@@ -328,7 +346,7 @@ def query_entities(data_url: str, entity_classes: List[URIRef],authorization=Non
     # parse template and add mapping results
     data.parse(data=data_data, format=format)
     # find base iri if any
-    print(list(data.namespaces()))
+    # print(list(data.namespaces()))
     base_ns = None
     for ns_prefix, namespace in data.namespaces():
         if ns_prefix == "base":
@@ -432,7 +450,7 @@ def get_mapping_output(
                     # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
                     "po": [
                         [str(mapping_predicate_uri), "method:" + ice_key + "~iri"],
-                    ]
+                    ],
                     #'po': [[str(mapping_predicate_uri), _il+'~iri'], ]
                 }
             )

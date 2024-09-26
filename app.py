@@ -30,7 +30,8 @@ setting = settings.Setting()
 config_name = os.environ.get("APP_MODE") or "development"
 middleware = [
     Middleware(
-        SessionMiddleware, secret_key=os.environ.get("APP_SECRET", "changemeNOW"),
+        SessionMiddleware,
+        secret_key=os.environ.get("APP_SECRET", "changemeNOW"),
     ),
     # Middleware(CSRFProtectMiddleware, csrf_secret=os.environ.get('APP_SECRET','changemeNOW')),
     Middleware(
@@ -97,11 +98,12 @@ def get_flashed_messages(request: Request):
 
 templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
     start_form = await forms.StartForm.from_formdata(request)
     start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
-    #request.session.clear()
+    # request.session.clear()
     return templates.TemplateResponse(
         "index.html",
         {
@@ -113,11 +115,14 @@ async def index(request: Request):
         },
     )
 
+
 @app.post("/create_mapper", response_class=HTMLResponse, include_in_schema=False)
 async def create_mapper(request: Request):
-    authorization=request.headers.get('Authorization',None)
+    # print(request.headers)
+    authorization = request.headers.get("Authorization", None)
+    # print(f"create mapper authorization: {authorization}")
     if authorization:
-        logging.debug('got authorization header')
+        logging.debug("got authorization header")
     logging.debug(await request.body())
 
     start_form = await forms.StartForm.from_formdata(request)
@@ -168,13 +173,13 @@ async def create_mapper(request: Request):
                 method_object_super_class_uris=[
                     URIRef(uri) for uri in mapping_object_class_uris
                 ],
-                authorization=authorization
+                authorization=authorization,
             )
             flash(request, str(mapper), "info")
-            #flash(request, str(mapper.subjects), "info")
+            # flash(request, str(mapper.subjects), "info")
         except Exception as err:
             flash(request, str(err), "error")
-        #print(mapper.objects.keys())
+        # print(mapper.objects.keys())
         # only named instances in the data can be mapped
         else:
             info_choices = [
@@ -186,9 +191,9 @@ async def create_mapper(request: Request):
             select_forms = forms.get_select_entries(mapper.objects.keys(), info_choices)
             mapping_form = await forms.MappingFormList.from_formdata(request)
             mapping_form.assignments.entries = select_forms
-    request.session['auth']=authorization
-    logging.debug('session: {}'.format(request.session))
-    
+    request.session["auth"] = authorization
+    logging.debug("session: {}".format(request.session))
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -203,14 +208,15 @@ async def create_mapper(request: Request):
 
 @app.post("/map", response_class=HTMLResponse, include_in_schema=False)
 async def map(request: Request):
-    authorization=request.headers.get('Authorization',None) or request.session.get('auth',None)
+    authorization = request.headers.get("Authorization", None) or request.session.get(
+        "auth", None
+    )
     if authorization:
-        logging.debug('got authorization header')
-    logging.debug('get map')
-    logging.debug('session: {}'.format(request.session))
+        logging.debug("got authorization header")
+    logging.debug("get map")
+    logging.debug("session: {}".format(request.session))
 
-
-    #logging.debug(request.data)
+    # logging.debug(request.data)
     formdata = await request.form()
     data_url = request.session.get("data_url", None)
     method_url = request.session.get("method_url", None)
@@ -235,8 +241,8 @@ async def map(request: Request):
     maplist = [(k, v) for k, v in select_dict.items() if v != "None"]
     logging.info("Creating mapping file for mapping list: {}".format(maplist))
     request.session["maplist"] = maplist
-    logging.debug('subjects: {}'.format(subjects))
-    logging.debug('objects: {}'.format(objects))
+    logging.debug("subjects: {}".format(subjects))
+    logging.debug("objects: {}".format(objects))
     with maptomethod.Mapper(
         data_url=data_url,
         method_url=method_url,
@@ -251,13 +257,13 @@ async def map(request: Request):
         maplist=maplist,
         subjects=subjects,
         objects=objects,
-        authorization=authorization
+        authorization=authorization,
     ) as mapper:
         result = mapper.to_pretty_yaml()
         filename = result["filename"]
         result_string = result["filedata"]
-        #print(type(result_string))
-        #print(result_string)
+        # print(type(result_string))
+        # print(result_string)
         b64 = base64.b64encode(result_string.encode())
         payload = b64.decode()
     return templates.TemplateResponse(
@@ -298,10 +304,12 @@ class QueryRequest(BaseModel):
 
 @app.post("/api/entities")
 def query_entities(request: QueryRequest, req: Request):
-    authorization=req.headers.get('Authorization',None)
+    authorization = req.headers.get("Authorization", None)
     # translate urls in entity_classes list to URIRef objects
     request.entity_classes = [URIRef(str(url)) for url in request.entity_classes]
-    return maptomethod.query_entities(str(request.url), request.entity_classes, authorization)
+    return maptomethod.query_entities(
+        str(request.url), request.entity_classes, authorization
+    )
 
 
 class MappingRequest(BaseModel):
@@ -311,8 +319,10 @@ class MappingRequest(BaseModel):
     method_url: AnyUrl = Field(
         "", title="Method Graph Url", description="Url to knowledge graph to use."
     )
-    use_template_rowwise: Optional[bool]  = Field(
-        False, title="Use Template Rowwise", description="If to duplicate the Method Graph for each row.",
+    use_template_rowwise: Optional[bool] = Field(
+        False,
+        title="Use Template Rowwise",
+        description="If to duplicate the Method Graph for each row.",
         omit_default=True,
     )
     data_super_classes: List = Field(
@@ -363,10 +373,10 @@ class YAMLResponse(StreamingResponse):
 
 @app.post("/api/mapping", response_class=YAMLResponse)
 def mapping(request: MappingRequest, req: Request) -> StreamingResponse:
-    authorization=req.headers.get('Authorization',None)
+    authorization = req.headers.get("Authorization", None)
     if authorization:
-        logging.debug('got authorization header')
-    
+        logging.debug("got authorization header")
+
     try:
         result = maptomethod.Mapper(
             str(request.data_url),
@@ -375,15 +385,14 @@ def mapping(request: MappingRequest, req: Request) -> StreamingResponse:
                 URIRef(str(uri)) for uri in request.method_super_classes
             ],
             mapping_predicate_uri=URIRef(str(request.predicate)),
-            use_template_rowwise = request.use_template_rowwise,
+            use_template_rowwise=request.use_template_rowwise,
             data_subject_super_class_uris=[
                 URIRef(str(uri)) for uri in request.data_super_classes
             ],
             maplist=request.map.items(),
-            authorization=authorization
+            authorization=authorization,
         ).to_pretty_yaml()
     except Exception as err:
-        print(err)
         raise HTTPException(status_code=500, detail=str(err))
     data_bytes = BytesIO(result["filedata"].encode())
     filename = result["filename"]
@@ -423,6 +432,7 @@ if __name__ == "__main__":
         access_log=access_log,
         log_config=config,
     )
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
