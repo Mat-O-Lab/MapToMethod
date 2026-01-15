@@ -21,7 +21,7 @@ mappings:
       - [str1, $(label)]
       - [str2, aktuelle Probe]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:SpecimenID~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:SpecimenID~iri']
   WidthMeasurement:
     sources: [annotations]
     s: $(@id)
@@ -31,7 +31,7 @@ mappings:
       - [str1, $(label)]
       - [str2, Probenbreite b0]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:WidthMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:WidthMeasurement~iri']
   ThicknessMeasurement:
     sources: [annotations]
     s: $(@id)
@@ -41,7 +41,7 @@ mappings:
       - [str1, $(label)]
       - [str2, Probendicke a0]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:ThicknessMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:ThicknessMeasurement~iri']
   ForceMeasurement:
     sources: [columns]
     s: $(@id)
@@ -51,7 +51,7 @@ mappings:
       - [str1, $(name)]
       - [str2, Standardkraft]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:ForceMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:ForceMeasurement~iri']
   LengthMeasurement:
     sources: [columns]
     s: $(@id)
@@ -61,7 +61,7 @@ mappings:
       - [str1, $(name)]
       - [str2, Standardweg]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:LengthMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:LengthMeasurement~iri']
   CrossheadSpeedSetPointValue:
     sources: [annotations]
     s: $(@id)
@@ -71,7 +71,7 @@ mappings:
       - [str1, $(label)]
       - [str2, Prüfgeschwindigkeit]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:CrossheadSpeedSetPointValue~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:CrossheadSpeedSetPointValue~iri']
   PreLoadSetPointValue:
     sources: [annotations]
     s: $(@id)
@@ -82,4 +82,5 @@ mappings:
       - [str2, Vorkraft]
     po:
 
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:PreLoadSetPointValue~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:PreLoadSetPointValue~iri']
+
