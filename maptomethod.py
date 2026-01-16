@@ -1,11 +1,12 @@
 import inspect
+import json
 import logging
 import sys
 from collections import OrderedDict
 from re import search as re_search
 from re import split as re_split
 from tokenize import Name
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from urllib.parse import unquote, urlparse, urljoin
 from urllib.request import urlopen, pathname2url
 import requests
@@ -308,6 +309,7 @@ class Mapper:
             self.maplist,
             self.subjects,
             self.mapping_predicate_uri,
+            self.authorization,
         )
         return results
 
@@ -315,6 +317,80 @@ class Mapper:
         result = self.to_yaml()
         result["filedata"] = dump(result["filedata"], Dumper=Dumper, allow_unicode=True)
         return result
+
+
+def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -> Tuple[str, str]:
+    """
+    Find the JSONPath iterator for objects containing a specific field.
+    
+    Args:
+        data_url: URL to the JSON file
+        field_name: Field to search for (e.g., "label", "name")
+        authorization: Authorization header
+        
+    Returns:
+        Tuple of (iterator_pattern, source_name)
+        e.g., ("$.notes[*]", "annotations") or ("$..columns[*]", "columns")
+    """
+    # Load the JSON file
+    filedata, filename = open_file(data_url, authorization)
+    try:
+        # Decode bytes to string if necessary
+        if isinstance(filedata, bytes):
+            filedata = filedata.decode('utf-8')
+        json_data = json.loads(filedata)
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        logging.error(f"Failed to parse JSON from {data_url}: {e}")
+        # Fallback to generic iterator
+        return ("$..[*]", field_name + "_source")
+    
+    def find_array_with_field(obj, path="$", field=None):
+        """
+        Recursively search for arrays containing objects with the specified field.
+        Returns list of tuples: (jsonpath, array_key_name)
+        """
+        results = []
+        
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                new_path = f"{path}.{key}"
+                if isinstance(value, list) and len(value) > 0:
+                    # Check if this array contains objects with our field
+                    if isinstance(value[0], dict) and field in value[0]:
+                        results.append((f"{new_path}[*]", key))
+                    # Continue searching recursively
+                    results.extend(find_array_with_field(value, new_path, field))
+                else:
+                    results.extend(find_array_with_field(value, new_path, field))
+        elif isinstance(obj, list):
+            for item in obj:
+                results.extend(find_array_with_field(item, path, field))
+        
+        return results
+    
+    # Find all arrays containing the field
+    found_paths = find_array_with_field(json_data, "$", field_name)
+    
+    if not found_paths:
+        logging.warning(f"Could not find array with field '{field_name}' in {data_url}, using fallback")
+        return ("$..[*]", field_name + "_source")
+    
+    # Use the first match
+    iterator_pattern, array_key = found_paths[0]
+    
+    # Determine source name based on array key or field name
+    if "note" in array_key.lower() or "annotation" in array_key.lower():
+        source_name = "annotations"
+    elif "column" in array_key.lower():
+        source_name = "columns"
+    elif "table" in array_key.lower():
+        source_name = "tables"
+    else:
+        # Use the array key name as source name
+        source_name = array_key.lower()
+    
+    logging.info(f"Found JSONPath iterator for field '{field_name}': {iterator_pattern} (source: {source_name})")
+    return (iterator_pattern, source_name)
 
 
 def query_entities(
@@ -390,6 +466,7 @@ def get_mapping_output(
     map_list: List,
     subjects_dict: dict,
     mapping_predicate_uri: URIRef,
+    authorization=None,
 ) -> dict:
     """Get yaml definging the yarrrml mapping rules.
 
@@ -401,12 +478,13 @@ def get_mapping_output(
         map_list (List): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for.
         subjects_dict (dict): Dict of subjects to create mapping rules for with short entity IRI as key
         mapping_predicate_uri (URIRef): Object property to use as predicate to link
+        authorization: Authorization header for HTTP requests
 
     Returns:
         dict: Dict with key filename with value the sugested mapping filenaem and filedata with value the string content of the generated yarrrml yaml file.
     """
     g = Graph(bind_namespaces="core")
-    g.bind("method", Namespace(method_ns))
+    g.bind("template", Namespace(method_ns))
     g.bind("data", Namespace(data_ns))
     g.bind("bfo", BFO)
     g.bind("csvw", CSVW)
@@ -414,22 +492,43 @@ def get_mapping_output(
     result = OrderedDict()
     result["prefixes"] = prefixes
     result["base"] = "http://purl.matolab.org/mseo/mappings/"
-    # data_file should be url at best
-    result["sources"] = {
-        "data_entities": {
-            "access": str(data_url),
-            "referenceFormulation": "jsonpath",
-            "iterator": "$..[*]",
-        }
-    }
-    result["use_template_rowwise"] = str(use_template_rowwise).lower()
-    result["mappings"] = OrderedDict()
-    print(subjects_dict)
-    logging.debug(subjects_dict)
+    
+    # Group mappings by their lookup field to discover iterators
+    field_to_mappings = {}
     for ice_key, il_id in map_list:
         _il = subjects_dict.get(il_id, None)
-        logging.debug("{} {} {}".format(ice_key, il_id, _il))
-        if _il:
+        if _il and "property" in _il:
+            field = _il["property"]
+            if field not in field_to_mappings:
+                field_to_mappings[field] = []
+            field_to_mappings[field].append((ice_key, il_id, _il))
+    
+    # Discover iterators for each field and build sources
+    sources = OrderedDict()
+    field_to_source = {}
+    
+    for field in field_to_mappings.keys():
+        iterator, source_name = find_jsonpath_iterator(data_url, field, authorization)
+        sources[source_name] = {
+            "access": str(data_url),
+            "iterator": iterator,
+            "referenceFormulation": "jsonpath",
+        }
+        field_to_source[field] = source_name
+    
+    result["sources"] = sources
+    result["use_template_rowwise"] = str(use_template_rowwise).lower()
+    result["mappings"] = OrderedDict()
+    
+    print(subjects_dict)
+    logging.debug(subjects_dict)
+    
+    # Generate mappings with correct source assignment
+    for field, mappings in field_to_mappings.items():
+        source_name = field_to_source[field]
+        for ice_key, il_id, _il in mappings:
+            logging.debug("{} {} {}".format(ice_key, il_id, _il))
+            
             lookup_property = "$({})".format(_il["property"])
             if lookup_property == "$(title)":
                 lookup_property = "$(titles)"
@@ -437,8 +536,7 @@ def get_mapping_output(
 
             result["mappings"][ice_key] = OrderedDict(
                 {
-                    "sources": ["data_entities"],
-                    #'s': 'data:$(@id)',
+                    "sources": [source_name],
                     "s": "$(@id)",
                     "condition": {
                         "function": "equal",
@@ -447,14 +545,12 @@ def get_mapping_output(
                             ["str2", compare_string],
                         ],
                     },
-                    # 'po':[['obo:0010002', 'method:'+str(mapping[0]).split('/')[-1]],]
                     "po": [
-                        [str(mapping_predicate_uri), "method:" + ice_key + "~iri"],
+                        [str(mapping_predicate_uri), "template:" + ice_key + "~iri"],
                     ],
-                    #'po': [[str(mapping_predicate_uri), _il+'~iri'], ]
                 }
             )
-            # self.mapping_yml=result
+    
     filename = (
         data_url.rsplit("/", 1)[-1].rsplit(".", 1)[0].rsplit("-", 1)[0] + "-map.yaml"
     )

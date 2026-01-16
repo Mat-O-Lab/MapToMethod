@@ -1,6 +1,9 @@
 services:
     maptomethod:
-      image: ghcr.io/mat-o-lab/maptomethod:latest
+      build: .
+      volumes:
+       - .:/src
+      entrypoint: "python app.py"
       environment:
         - APP_MODE
         - APP_SECRET
