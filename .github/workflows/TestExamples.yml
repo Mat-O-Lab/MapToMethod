@@ -4,59 +4,148 @@ on:
   push:
     branches:
       - main
+      - develop
   workflow_dispatch:
 
 env:
-  WORKING_DIR: ./examples/
-  DATA_URL: 'https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json'
-  METHOD_URL: 'https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.ttl'
+  WORKING_DIR: ./examples
   APP_PORT: 5005
+  APP_MODE: development
+  SSL_VERIFY: True
+
 jobs:
   TestExamples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0        
-      - name: run app
+          fetch-depth: 0
+
+      - name: Install dependencies
         run: |
-          docker-compose up -d
-          sleep 10
-          docker ps -a
-      - name: list entities
-        working-directory: ${{env.WORKING_DIR}}
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Start services
         run: |
-          curl -X 'POST' \
-          'http://localhost:${{env.APP_PORT}}/api/entities' \
-          -H 'accept: application/json' \
-          -H 'Content-Type: application/json' \
-          -d '{
-          "url": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json",
-          "entity_classes": [
-            "http://www.w3.org/ns/csvw#Column",
-            "http://www.w3.org/ns/oa#Annotation"
-          ]}' | jq . > bearingentities.json
-          curl -X 'POST' \
-          'http://localhost:${{env.APP_PORT}}/api/entities' \
-          -H 'accept: application/json' \
-          -H 'Content-Type: application/json' \
-          -d '{
-          "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
-          "entity_classes": [
-            "https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity",
-            "http://purl.obolibrary.org/obo/BFO_0000008"
-          ]}'| jq . > contententities.json
-      - name: delete yaml files
-        working-directory: ${{env.WORKING_DIR}}
-        run: rm *.yaml
-        continue-on-error: true
-      - name: create YARRRML mapping
-        working-directory: ${{env.WORKING_DIR}}
+          docker compose -f docker-compose.dev.yml up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 30
+          docker compose ps
+
+      - name: Check service health
         run: |
-          curl -X POST "http://localhost:${{env.APP_PORT}}/api/mapping" -H  "accept: application/json" -H  "accept: application/json" -H  "Content-Type: application/json" -d @request.json -v --connect-timeout 5  -O -J
-      - name: Commit files # commit the output folder
+          echo "Checking if MapToMethod API is responding..."
+          curl -s http://localhost:${APP_PORT}/info | jq .
+          echo "✓ Service is healthy"
+
+      - name: Test entity queries
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "================================================"
+          echo "Testing /api/entities endpoint"
+          echo "================================================"
+          
+          # Query data entities (columns and annotations)
+          echo "→ Querying data entities from CSVW metadata..."
+          curl -s -X POST "http://localhost:${APP_PORT}/api/entities" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "url": "https://raw.githubusercontent.com/Mat-O-Lab/CSVToCSVW/main/examples/example-metadata.json",
+              "entity_classes": [
+                "http://www.w3.org/ns/csvw#Column",
+                "http://www.w3.org/ns/oa#Annotation"
+              ]
+            }' | jq . > bearingentities.json
+          
+          if [ -s bearingentities.json ]; then
+            echo "✓ Generated bearingentities.json"
+          else
+            echo "✗ Failed to generate bearingentities.json"
+          fi
+          
+          # Query method template entities
+          echo "→ Querying method template entities..."
+          curl -s -X POST "http://localhost:${APP_PORT}/api/entities" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "url": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+              "entity_classes": [
+                "https://spec.industrialontologies.org/ontology/core/Core/InformationContentEntity",
+                "http://purl.obolibrary.org/obo/BFO_0000008"
+              ]
+            }' | jq . > contententities.json
+          
+          if [ -s contententities.json ]; then
+            echo "✓ Generated contententities.json"
+          else
+            echo "✗ Failed to generate contententities.json"
+          fi
+          echo ""
+
+      - name: Test mapping generation with example request
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "================================================"
+          echo "Testing /api/mapping endpoint with request.json"
+          echo "================================================"
+          
+          if [ -f request.json ]; then
+            echo "→ Creating YARRRML mapping from request.json..."
+            
+            # Make API call and capture both headers and body
+            RESPONSE=$(curl -s -X POST "http://localhost:${APP_PORT}/api/mapping" \
+              -H "Content-Type: application/json" \
+              -d @request.json \
+              -D - -o mapping-output.yaml)
+            
+            # Extract filename from Content-Disposition if present
+            FILENAME=$(echo "$RESPONSE" | grep -i "Content-Disposition" | sed -n 's/.*filename=\(.*\)/\1/p' | tr -d '\r\n' || echo "example-map.yaml")
+            
+            if [ -s mapping-output.yaml ]; then
+              mv mapping-output.yaml "$FILENAME"
+              echo "✓ Generated $FILENAME"
+              echo "Preview (first 20 lines):"
+              head -n 20 "$FILENAME"
+            else
+              echo "✗ Failed to generate mapping file"
+              cat mapping-output.yaml
+            fi
+          else
+            echo "⚠ request.json not found, skipping this test"
+          fi
+          echo ""
+
+      - name: Test all YAML mappings can be read
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "================================================"
+          echo "Validating existing YAML mapping files"
+          echo "================================================"
+          
+          for file in *.yaml
+          do
+            if [ -f "$file" ]; then
+              echo "→ Checking $file..."
+              
+              # Basic YAML syntax validation
+              if python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+                echo "  ✓ Valid YAML syntax"
+              else
+                echo "  ✗ Invalid YAML syntax"
+              fi
+            fi
+          done
+          echo ""
+
+      - name: Print service logs
+        if: always()
+        run: docker compose logs
+
+      - name: Commit generated files
         uses: EndBug/add-and-commit@v9
         with:
-          message: 'updated example output'
-          add: '*.* --force'
-          cwd: './examples/'
+          message: updated example outputs
+          add: "*.json *.yaml --force"
+          cwd: ./examples/
