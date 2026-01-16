@@ -1,17 +1,19 @@
 prefixes: {bfo: 'http://purl.obolibrary.org/obo/', csvw: 'http://www.w3.org/ns/csvw#',
   data: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json/',
-  method: 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/',
+  template: 'https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl/',
   owl: 'http://www.w3.org/2002/07/owl#', rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
   rdfs: 'http://www.w3.org/2000/01/rdf-schema#', xml: 'http://www.w3.org/XML/1998/namespace',
   xsd: 'http://www.w3.org/2001/XMLSchema#'}
 base: http://purl.matolab.org/mseo/mappings/
 sources:
-  data_entities: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
-    iterator: '$..[*]', referenceFormulation: jsonpath}
+  columns: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
+    iterator: '$..columns[*]', referenceFormulation: jsonpath}
+  annotations: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
+    iterator: '$.notes[*]', referenceFormulation: jsonpath}
 use_template_rowwise: 'false'
 mappings:
   SpecimenID:
-    sources: [data_entities]
+    sources: [annotations]
     s: $(@id)
     condition:
       function: equal
@@ -19,9 +21,9 @@ mappings:
       - [str1, $(label)]
       - [str2, aktuelle Probe]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:SpecimenID~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:SpecimenID~iri']
   WidthMeasurement:
-    sources: [data_entities]
+    sources: [annotations]
     s: $(@id)
     condition:
       function: equal
@@ -29,9 +31,9 @@ mappings:
       - [str1, $(label)]
       - [str2, Probenbreite b0]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:WidthMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:WidthMeasurement~iri']
   ThicknessMeasurement:
-    sources: [data_entities]
+    sources: [annotations]
     s: $(@id)
     condition:
       function: equal
@@ -39,9 +41,9 @@ mappings:
       - [str1, $(label)]
       - [str2, Probendicke a0]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:ThicknessMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:ThicknessMeasurement~iri']
   ForceMeasurement:
-    sources: [data_entities]
+    sources: [columns]
     s: $(@id)
     condition:
       function: equal
@@ -49,9 +51,9 @@ mappings:
       - [str1, $(name)]
       - [str2, Standardkraft]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:ForceMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:ForceMeasurement~iri']
   LengthMeasurement:
-    sources: [data_entities]
+    sources: [columns]
     s: $(@id)
     condition:
       function: equal
@@ -59,9 +61,9 @@ mappings:
       - [str1, $(name)]
       - [str2, Standardweg]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:LengthMeasurement~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:LengthMeasurement~iri']
   CrossheadSpeedSetPointValue:
-    sources: [data_entities]
+    sources: [annotations]
     s: $(@id)
     condition:
       function: equal
@@ -69,9 +71,9 @@ mappings:
       - [str1, $(label)]
       - [str2, Prüfgeschwindigkeit]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:CrossheadSpeedSetPointValue~iri']
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:CrossheadSpeedSetPointValue~iri']
   PreLoadSetPointValue:
-    sources: [data_entities]
+    sources: [annotations]
     s: $(@id)
     condition:
       function: equal
@@ -79,4 +81,6 @@ mappings:
       - [str1, $(label)]
       - [str2, Vorkraft]
     po:
-    - ['http://purl.obolibrary.org/obo/RO_0010002', 'method:PreLoadSetPointValue~iri']
+
+    - ['http://purl.obolibrary.org/obo/RO_0010002', 'template:PreLoadSetPointValue~iri']
+
