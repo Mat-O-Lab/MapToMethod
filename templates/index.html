@@ -132,6 +132,14 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js?lang=yaml&css&amp;skin=sunburst"></script>
 <script>
+// Automatically detect base path for API calls when deployed in subdomain
+const BASE_PATH = (() => {
+  const path = window.location.pathname;
+  if (path === '/' || path === '') return '';
+  const match = path.match(/^\/[^\/]+/); // Match first path segment
+  return match ? match[0] : '';
+})();
+
 // Namespace abbreviation dictionary
 const NAMESPACE_PREFIXES = {
   'http://www.w3.org/ns/csvw#': 'csvw',
@@ -321,8 +329,8 @@ async function loadDocuments() {
   try {
     // Fetch types from both documents
     const [dataResponse, templateResponse] = await Promise.all([
-      fetch(`/api/types?url=${encodeURIComponent(dataUrl)}`),
-      fetch(`/api/types?url=${encodeURIComponent(templateUrl)}`)
+      fetch(`${BASE_PATH}/api/types?url=${encodeURIComponent(dataUrl)}`),
+      fetch(`${BASE_PATH}/api/types?url=${encodeURIComponent(templateUrl)}`)
     ]);
     
     if (!dataResponse.ok || !templateResponse.ok) {
@@ -446,8 +454,8 @@ async function startMapping() {
   try {
     // Fetch entities from both documents
     const [dataResponse, templateResponse] = await Promise.all([
-      fetch(`/api/entities?url=${encodeURIComponent(dataUrl)}&types=${encodeURIComponent(dataTypes.join(','))}`),
-      fetch(`/api/entities?url=${encodeURIComponent(templateUrl)}&types=${encodeURIComponent(templateTypes.join(','))}`)
+      fetch(`${BASE_PATH}/api/entities?url=${encodeURIComponent(dataUrl)}&types=${encodeURIComponent(dataTypes.join(','))}`),
+      fetch(`${BASE_PATH}/api/entities?url=${encodeURIComponent(templateUrl)}&types=${encodeURIComponent(templateTypes.join(','))}`)
     ]);
     
     if (!dataResponse.ok || !templateResponse.ok) {
@@ -597,7 +605,7 @@ async function createMapping() {
   btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Creating...';
   
   try {
-    const response = await fetch('/api/mapping', {
+    const response = await fetch(`${BASE_PATH}/api/mapping`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
