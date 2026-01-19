@@ -187,29 +187,7 @@ def get_all_sub_classes(superclass: URIRef, authorization=None) -> List[URIRef]:
     return classes
 
 
-def get_methods() -> Dict:
-    """Get all ttl filenames and URLs in the MSEO methods folder.
-
-    Returns:
-        Dict: Dict with method name aas key and url to file as value
-    """
-    mseo_repo = github.Github().get_repo("Mat-O-Lab/MSEO")
-    folder_index = mseo_repo.get_contents("methods")
-    # print(folder_index)
-    if folder_index:
-        methods_urls = [
-            method.download_url
-            for method in folder_index
-            if method.download_url and method.download_url.endswith("ttl")
-        ]
-        methods = {
-            re_search("[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))", url)[0].split(".")[0]: url
-            for url in methods_urls
-        }
-    else:
-        methods = {}
-    logging.info("Following methods are available as select: {}".format(methods))
-    return methods
+# Removed get_methods() function - templates are now provided directly by users
 
 
 # InformtionContentEntity = CCO.InformationContentEntity
@@ -222,9 +200,9 @@ class Mapper:
     def __init__(
         self,
         data_url: str,
-        method_url: str,
+        template_url: str,
         use_template_rowwise: bool,
-        method_object_types: List[URIRef] = [
+        template_object_types: List[URIRef] = [
             InformtionContentEntity,
             TemporalRegionClass,
         ],
@@ -235,24 +213,25 @@ class Mapper:
         maplist: List[Tuple[str, str]] = [],
         authorization=None,
     ):
-        """Mapper Class for creating Rule based yarrrml mappings for data metadata to link to a knowledge graph.
+        """Mapper Class for creating Rule based yarrrml mappings for data metadata to link to a template knowledge graph.
 
         Args:
-            data_url (AnyUrl): Url to metadata describing the data to link
-            method_url (AnyUrl): Url to knowledgegraph describing context to link data to.
-            method_subject_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as subjects of the mapping rules. Defaults to [InformtionContentEntity,TemporalRegionClass].
+            data_url (str): URL to metadata describing the data to link
+            template_url (str): URL to template knowledge graph describing context to link data to
+            use_template_rowwise (bool): Whether to duplicate the template for each data row
+            template_object_types (List[URIRef], optional): List of URIRef objects defining classes to query for as objects in the template graph. Defaults to [InformtionContentEntity,TemporalRegionClass].
             mapping_predicate_uri (URIRef, optional): Object property to use as predicate to link. Defaults to ContentToBearingRelation.
-            data_object_super_class_uris (List[URIRef], optional): List of rdflib URIRef objects defining classes to query for as objects of the mapping rules. Defaults to [OA.Annotation,CSVW.Column].
-            subjects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the data metadata. Defaults to [].
-            objects (List[URIRef], optional): List of rdflib URIRef objects which are individuals in the knowledge grph. Defaults to [].
-            maplist (List[Tuple[str, str]], optional): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for. Defaults to [].
-            authorization (str): Json strint to use as Authorization Header on requests to external urls.
+            data_subject_types (List[URIRef], optional): List of URIRef objects defining classes to query for as subjects in the data metadata. Defaults to [OA.Annotation,CSVW.Column].
+            subjects (dict, optional): Dict of subject individuals from data metadata. Defaults to [].
+            objects (dict, optional): Dict of object individuals from template knowledge graph. Defaults to [].
+            maplist (List[Tuple[str, str]], optional): List of pairs mapping object names in template to subject IDs in data. Defaults to [].
+            authorization (str, optional): Authorization Header value for requests to external URLs.
         """
         logging.info(
             "Following Namespaces available to Mapper: {}".format(ontologies.keys())
         )
         self.data_url = data_url
-        self.method_url = method_url
+        self.template_url = template_url
         self.use_template_rowwise = use_template_rowwise
         self.mapping_predicate_uri = mapping_predicate_uri
         self.authorization = authorization
@@ -260,12 +239,12 @@ class Mapper:
         # file_data, file_name =open_file(data_url)
         if not objects:
             self.objects, base_ns_objects = query_entities(
-                self.method_url, method_object_types, self.authorization
+                self.template_url, template_object_types, self.authorization
             )
             self.base_ns_objects = base_ns_objects
         else:
             self.objects = objects
-            self.base_ns_objects = self.method_url + "/"
+            self.base_ns_objects = self.template_url + "/"
         logging.debug("namespace objects: " + self.base_ns_objects)
 
         if not subjects:
@@ -280,7 +259,7 @@ class Mapper:
 
         self.maplist = maplist
 
-    # methods for context managers
+    # templates for context managers
     def __enter__(self):
         return self
 
@@ -293,7 +272,7 @@ class Mapper:
         Returns:
             str: String representation
         """
-        return f"Mapper: {self.data_url} {self.method_url}"
+        return f"Mapper: {self.data_url} {self.template_url}"
 
     def to_yaml(self) -> dict:
         """Return filename and yarrrml yaml file content
@@ -507,29 +486,29 @@ def get_mapping_output(
     data_url: str,
     use_template_rowwise: bool,
     data_ns: str,
-    method_ns: str,
+    template_ns: str,
     map_list: List,
     subjects_dict: dict,
     mapping_predicate_uri: URIRef,
     authorization=None,
 ) -> dict:
-    """Get yaml definging the yarrrml mapping rules.
+    """Generate YARRRML mapping rules linking data to template.
 
     Args:
-        data_url (AnyUrl): Url to data metadata to use
-        data_ns (AnyUrl): Namespace of the data entities to map
-        method_ns (AnyUrl): Namespace of the method entities to relate to
-        method_url (AnyUrl): Url to knowledge graph to use
-        map_list (List): List of pairs of individual name of objects in knowledge graph and labels of indivuals in data metadata to create mapping rules for.
-        subjects_dict (dict): Dict of subjects to create mapping rules for with short entity IRI as key
+        data_url (str): URL to data metadata to use
+        use_template_rowwise (bool): Whether to duplicate template for each row
+        data_ns (str): Namespace of the data entities to map
+        template_ns (str): Namespace of the template entities to relate to
+        map_list (List): List of pairs mapping template object names to data subject IDs
+        subjects_dict (dict): Dict of data subjects with short entity IRI as key
         mapping_predicate_uri (URIRef): Object property to use as predicate to link
-        authorization: Authorization header for HTTP requests
+        authorization (str, optional): Authorization header for HTTP requests
 
     Returns:
-        dict: Dict with key filename with value the sugested mapping filenaem and filedata with value the string content of the generated yarrrml yaml file.
+        dict: Dict with 'filename' (suggested mapping filename) and 'filedata' (YARRRML yaml content)
     """
     g = Graph(bind_namespaces="core")
-    g.bind("template", Namespace(method_ns))
+    g.bind("template", Namespace(template_ns))
     g.bind("data", Namespace(data_ns))
     g.bind("bfo", BFO)
     g.bind("csvw", CSVW)
