@@ -16,7 +16,7 @@
     <p class="col-md-12 ps-0 fs-4">
       {{ setting.desc }}
     </p>
-    <form class='pb-3' method="POST" action="{{ url_for('create_mapper') }}">
+    <form class='pb-3' method="POST" action="{{ url_for('create_mapper') }}" id="mainForm">
       {{ start_form.csrf_token }}
       {% for item in start_form if item.widget.input_type != 'hidden' %}
         <div class="mb-3">
@@ -28,6 +28,34 @@
           {{ item.label(class="form-label")}}
           {% endif %}
           {{ item }}
+          
+          {# Add badge UI for type fields - 2 column grid layout #}
+          {% if item.label.text == 'Advanced' %}
+            <div class="mt-3">
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Data Subject Types:</label>
+                  <div id="data-subject-badges" class="types-container mb-2 p-3 border rounded bg-light" style="min-height: 100px;">
+                    {# Badges will be added here dynamically #}
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="addType('data-subject')">
+                    <i class="bi bi-plus"></i> Add Type
+                  </button>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Template Object Types:</label>
+                  <div id="template-object-badges" class="types-container mb-2 p-3 border rounded bg-light" style="min-height: 100px;">
+                    {# Badges will be added here dynamically #}
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="addType('template-object')">
+                    <i class="bi bi-plus"></i> Add Type
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          
           <div class="invalid-feedback">
             {% if item.errors %}
                 <ul class="errors">
@@ -37,17 +65,21 @@
                 </ul>
             {% endif %}
           </div>
-          <div id="methodHelp" class="form-text">{{ item.description }}</div>
+          <div id="templateHelp" class="form-text">{{ item.description }}</div>
         </div>
       {% endfor %}
-      <button class="form-group btn btn-primary btn-lg mt-3" type="submit">Start Mapping</button>
+      <button class="form-group btn btn-secondary btn-lg mt-3 me-2" type="button" id="loadDocsBtn" onclick="loadDocuments()">
+        <span id="loadSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+        Load Documents & Discover Types
+      </button>
+      <button class="form-group btn btn-primary btn-lg mt-3" type="button" id="startMappingBtn" onclick="startMapping()" disabled title="Please load documents first">Start Mapping</button>
     </form>
   </div>
   {% if mapping_form %}
   <div class="container-fluid collapse p-0 pb-3 {% if mapping_form %} show {% endif %}" id="mappingForm">
     <div class="card card-body">
       <h5 class="card-title">Mapping Dialog</h5>
-      <h6 class="card-subtitle mb-2 text-muted">Map Information Line and Colum Entities of the Meta Data File against the Information Content Entities of the Method Graph</h6>
+      <h6 class="card-subtitle mb-2 text-muted">Map Information Line and Colum Entities of the Meta Data File against the Information Content Entities of the Template Graph</h6>
       <form class='pb-3' method="POST" action="{{ url_for('map') }}">
         {{ mapping_form.csrf_token }}
         {% for item in mapping_form %}
@@ -62,7 +94,7 @@
                   </ul>
               {% endif %}
             </div>
-            <div id="methodHelp" class="form-text">{{ item.description }}</div>
+            <div id="templateHelp" class="form-text">{{ item.description }}</div>
           </div>
         {% endfor %}
       <button class="form-group btn btn-primary btn-lg mt-3" type="submit">Create Mapping</button>
@@ -99,5 +131,547 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js?lang=yaml&css&amp;skin=sunburst"></script>
+<script>
+// Namespace abbreviation dictionary
+const NAMESPACE_PREFIXES = {
+  'http://www.w3.org/ns/csvw#': 'csvw',
+  'http://www.w3.org/ns/oa#': 'oa',
+  'http://www.w3.org/ns/prov#': 'prov',
+  'http://www.w3.org/2002/07/owl#': 'owl',
+  'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
+  'http://www.w3.org/2000/01/rdf-schema#': 'rdfs',
+  'http://purl.obolibrary.org/obo/': 'obo',
+  'https://spec.industrialontologies.org/ontology/core/Core/': 'iof',
+  'http://qudt.org/schema/qudt/': 'qudt',
+  'https://purl.matolab.org/mseo/mid/': 'mseo'
+};
+
+// System types to filter out by default
+const SYSTEM_TYPES = [
+  'http://www.w3.org/2002/07/owl#Class',
+  'http://www.w3.org/2002/07/owl#Restriction',
+  'http://www.w3.org/2002/07/owl#DatatypeProperty',
+  'http://www.w3.org/2002/07/owl#ObjectProperty',
+  'http://www.w3.org/2002/07/owl#NamedIndividual',
+  'http://www.w3.org/2002/07/owl#Ontology'
+];
+
+// Abbreviate IRI using namespace prefixes
+function abbreviateIRI(iri) {
+  for (const [namespace, prefix] of Object.entries(NAMESPACE_PREFIXES)) {
+    if (iri.startsWith(namespace)) {
+      return prefix + '#' + iri.substring(namespace.length);
+    }
+  }
+  // If no prefix found, show last part after # or /
+  const parts = iri.split(/[/#]/);
+  return parts[parts.length - 1];
+}
+
+// Create a badge element
+function createBadge(iri, container) {
+  const badge = document.createElement('span');
+  badge.className = 'badge me-2 mb-2 d-inline-flex align-items-center';
+  badge.style.fontSize = '0.9rem';
+  badge.setAttribute('data-uri', iri);
+  badge.setAttribute('title', iri);
+  
+  // Get abbreviated form and extract prefix for coloring
+  const abbreviated = abbreviateIRI(iri);
+  const prefix = abbreviated.split('#')[0].split(':')[0];
+  
+  // Apply hash-based color
+  badge.style.backgroundColor = getColorForPrefix(prefix);
+  badge.style.color = '#fff';
+  
+  const text = document.createElement('span');
+  text.textContent = abbreviated;
+  text.className = 'me-2';
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'btn-close btn-close-white btn-sm';
+  closeBtn.setAttribute('aria-label', 'Remove');
+  closeBtn.style.fontSize = '0.6rem';
+  closeBtn.onclick = function() {
+    badge.remove();
+    updateHiddenField(container);
+  };
+  
+  badge.appendChild(text);
+  badge.appendChild(closeBtn);
+  
+  return badge;
+}
+
+// Update hidden field with current badges
+function updateHiddenField(containerId) {
+  const container = document.getElementById(containerId);
+  const badges = container.querySelectorAll('.badge');
+  const uris = Array.from(badges).map(badge => badge.getAttribute('data-uri'));
+  
+  let hiddenFieldId;
+  if (containerId === 'data-subject-badges') {
+    hiddenFieldId = 'data-subject-types-hidden';
+  } else if (containerId === 'template-object-badges') {
+    hiddenFieldId = 'template-object-types-hidden';
+  }
+  
+  const hiddenField = document.getElementById(hiddenFieldId);
+  if (hiddenField) {
+    hiddenField.value = uris.join(',');
+  }
+}
+
+// Add a type badge
+function addTypeBadge(iri, containerId, skipSystemTypes = false) {
+  if (skipSystemTypes && SYSTEM_TYPES.includes(iri)) {
+    return;
+  }
+  
+  const container = document.getElementById(containerId);
+  const badge = createBadge(iri, containerId);
+  container.appendChild(badge);
+  updateHiddenField(containerId);
+}
+
+// Add type via input prompt
+function addType(typeCategory) {
+  const iri = prompt('Enter the full IRI of the type:');
+  if (iri && iri.trim()) {
+    const containerId = typeCategory === 'data-subject' ? 'data-subject-badges' : 'template-object-badges';
+    addTypeBadge(iri.trim(), containerId);
+  }
+}
+
+// Initialize badges from existing hidden field values (on page load)
+function initializeBadges() {
+  const dataSubjectField = document.getElementById('data-subject-types-hidden');
+  const templateObjectField = document.getElementById('template-object-types-hidden');
+  
+  // Only populate if fields have non-default values (i.e., have been populated by loadDocuments)
+  if (dataSubjectField && dataSubjectField.value) {
+    const uris = dataSubjectField.value.split(',').filter(uri => uri.trim());
+    // Only populate if we have actual type URIs (not just defaults)
+    if (uris.length > 0) {
+      uris.forEach(uri => addTypeBadge(uri.trim(), 'data-subject-badges', true));
+    }
+  }
+  
+  if (templateObjectField && templateObjectField.value) {
+    const uris = templateObjectField.value.split(',').filter(uri => uri.trim());
+    // Only populate if we have actual type URIs (not just defaults)
+    if (uris.length > 0) {
+      uris.forEach(uri => addTypeBadge(uri.trim(), 'template-object-badges', true));
+    }
+  }
+}
+
+// Generic hash-based color generation for prefixes
+function getColorForPrefix(prefix) {
+  // Generate hash from prefix string
+  let hash = 0;
+  for (let i = 0; i < prefix.length; i++) {
+    hash = prefix.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  // Convert to HSL color (fixed saturation & lightness for consistency)
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 65%, 50%)`;
+}
+
+// Colorize all type badges on page
+function colorizeBadges() {
+  document.querySelectorAll('.type-badge').forEach(badge => {
+    const prefix = badge.getAttribute('data-prefix');
+    if (prefix) {
+      badge.style.backgroundColor = getColorForPrefix(prefix);
+      badge.style.color = '#fff';
+    }
+  });
+}
+
+// Load on page ready
+document.addEventListener('DOMContentLoaded', function() {
+  initializeBadges();
+  colorizeBadges();
+});
+
+async function loadDocuments() {
+  // Get URL values
+  const dataUrlInput = document.querySelector('input[name="data_url"]');
+  const templateUrlInput = document.querySelector('input[name="template_url"]');
+  
+  // Use provided values or fall back to placeholders
+  const dataUrl = dataUrlInput?.value || dataUrlInput?.placeholder;
+  const templateUrl = templateUrlInput?.value || templateUrlInput?.placeholder;
+  
+  // Validation - ensure we have at least placeholders
+  if (!dataUrl || !templateUrl) {
+    alert('Unable to determine document URLs. Please check the form.');
+    return;
+  }
+  
+  // Show loading spinner
+  const spinner = document.getElementById('loadSpinner');
+  const btn = document.getElementById('loadDocsBtn');
+  spinner.classList.remove('d-none');
+  btn.disabled = true;
+  
+  try {
+    // Fetch types from both documents
+    const [dataResponse, templateResponse] = await Promise.all([
+      fetch(`/api/types?url=${encodeURIComponent(dataUrl)}`),
+      fetch(`/api/types?url=${encodeURIComponent(templateUrl)}`)
+    ]);
+    
+    if (!dataResponse.ok || !templateResponse.ok) {
+      throw new Error('Failed to load types from one or both documents');
+    }
+    
+    const dataTypes = await dataResponse.json();
+    const templateTypes = await templateResponse.json();
+    
+    // Populate the Advanced section fields
+    populateTypeFields('advanced-data_subject_super_class_uris', dataTypes);
+    populateTypeFields('advanced-template_object_super_class_uris', templateTypes);
+    
+    // Show success message
+    showMessage(`Successfully loaded ${dataTypes.length} types from data document and ${templateTypes.length} types from template document.`, 'success');
+    
+    // Auto-expand Advanced section
+    const advancedSection = document.getElementById('advanced');
+    if (advancedSection && !advancedSection.classList.contains('show')) {
+      const advancedBtn = document.querySelector('[data-bs-target="#advanced"]');
+      if (advancedBtn) {
+        advancedBtn.click();
+      }
+    }
+    
+    // Enable Start Mapping button
+    const startMappingBtn = document.getElementById('startMappingBtn');
+    if (startMappingBtn) {
+      startMappingBtn.disabled = false;
+      startMappingBtn.title = '';
+    }
+    
+  } catch (error) {
+    console.error('Error loading documents:', error);
+    showMessage('Error loading documents: ' + error.message, 'danger');
+  } finally {
+    // Hide loading spinner
+    spinner.classList.add('d-none');
+    btn.disabled = false;
+  }
+}
+
+function populateTypeFields(fieldPrefix, types) {
+  // Determine which container to use
+  let containerId;
+  if (fieldPrefix.includes('data_subject')) {
+    containerId = 'data-subject-badges';
+  } else if (fieldPrefix.includes('template_object')) {
+    containerId = 'template-object-badges';
+  }
+  
+  if (!containerId) return;
+  
+  // Clear existing badges
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  
+  // Add badges for each type (filter system types)
+  types.forEach(iri => {
+    addTypeBadge(iri, containerId, true); // true = skip system types
+  });
+  
+  // Count filtered types
+  const filteredCount = types.filter(iri => SYSTEM_TYPES.includes(iri)).length;
+  if (filteredCount > 0) {
+    console.log(`Note: Filtered out ${filteredCount} system types (OWL, RDF schema types)`);
+  }
+}
+
+function showMessage(text, category) {
+  const messagesDiv = document.getElementById('messages');
+  const messagesBody = document.getElementById('messages-body');
+  
+  if (!messagesDiv || !messagesBody) return;
+  
+  // Create alert
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${category} alert-dismissible fade show`;
+  alert.role = 'alert';
+  alert.innerHTML = `
+    ${text}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
+  
+  // Add to messages
+  messagesBody.appendChild(alert);
+  
+  // Show messages section
+  if (!messagesDiv.classList.contains('show')) {
+    messagesDiv.classList.add('show');
+  }
+}
+
+// Store entities globally for mapping creation
+let globalSubjects = {};
+let globalObjects = {};
+
+async function startMapping() {
+  // Get URLs and types
+  const dataUrl = document.querySelector('input[name="data_url"]').value || 
+                  document.querySelector('input[name="data_url"]').placeholder;
+  const templateUrl = document.querySelector('input[name="template_url"]').value || 
+                    document.querySelector('input[name="template_url"]').placeholder;
+  
+  // Get type URIs from badges
+  const dataTypes = Array.from(document.querySelectorAll('#data-subject-badges .badge'))
+    .map(badge => badge.getAttribute('data-uri'));
+  const templateTypes = Array.from(document.querySelectorAll('#template-object-badges .badge'))
+    .map(badge => badge.getAttribute('data-uri'));
+  
+  if (dataTypes.length === 0 || templateTypes.length === 0) {
+    alert('Please load documents and ensure types are selected first.');
+    return;
+  }
+  
+  // Show loading
+  const btn = document.getElementById('startMappingBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
+  
+  try {
+    // Fetch entities from both documents
+    const [dataResponse, templateResponse] = await Promise.all([
+      fetch(`/api/entities?url=${encodeURIComponent(dataUrl)}&types=${encodeURIComponent(dataTypes.join(','))}`),
+      fetch(`/api/entities?url=${encodeURIComponent(templateUrl)}&types=${encodeURIComponent(templateTypes.join(','))}`)
+    ]);
+    
+    if (!dataResponse.ok || !templateResponse.ok) {
+      throw new Error('Failed to load entities from one or both documents');
+    }
+    
+    const dataResult = await dataResponse.json();
+    const templateResult = await templateResponse.json();
+    
+    globalSubjects = dataResult.entities || {};
+    globalObjects = templateResult.entities || {};
+    
+    // Build mapping widgets
+    buildMappingWidgets(globalSubjects, globalObjects);
+    
+    // Show mapping section
+    const mappingSection = document.getElementById('mappingForm');
+    if (mappingSection && !mappingSection.classList.contains('show')) {
+      mappingSection.classList.add('show');
+    }
+    
+    showMessage(`Loaded ${Object.keys(globalSubjects).length} data entities and ${Object.keys(globalObjects).length} template entities.`, 'success');
+    
+  } catch (error) {
+    console.error('Error starting mapping:', error);
+    showMessage('Error starting mapping: ' + error.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Start Mapping';
+  }
+}
+
+function buildMappingWidgets(subjects, objects) {
+  // Get or create mapping form container
+  let mappingSection = document.getElementById('mappingForm');
+  if (!mappingSection) {
+    mappingSection = document.createElement('div');
+    mappingSection.id = 'mappingForm';
+    mappingSection.className = 'container-fluid p-0 pb-3';
+    document.querySelector('main .container-fluid').after(mappingSection);
+  }
+  
+  // Build choices for dropdowns
+  const choices = [];
+  for (const [id, value] of Object.entries(subjects)) {
+    if (value.text) {
+      let choiceText = value.text;
+      if (value.type) {
+        const typeAbbrev = abbreviateIRI(value.type);
+        choiceText += ` (${typeAbbrev})`;
+      }
+      choices.push({ id, text: choiceText });
+    }
+  }
+  
+  // Build HTML
+  let html = `
+    <div class="card card-body">
+      <h5 class="card-title">Mapping Dialog</h5>
+      <h6 class="card-subtitle mb-2 text-muted">Map Information Line and Column Entities of the Meta Data File against the Information Content Entities of the Template Graph</h6>
+      <div id="mappingWidgets" class="pb-3 row">
+  `;
+  
+  // Create a select for each object in a 2-column grid
+  for (const [objName, objValue] of Object.entries(objects)) {
+    const objType = objValue.type ? abbreviateIRI(objValue.type) : '';
+    const label = objType ? `${objName} <span class="badge type-badge" data-prefix="${objType.split('#')[0]}" title="${objValue.type}">${objType}</span>` : objName;
+    
+    html += `
+      <div class="col-md-6 mb-3">
+        <label class="form-label fw-bold">${label}</label>
+        <select name="${objName}" class="form-control">
+          <option value="None">None</option>
+    `;
+    
+    choices.forEach(choice => {
+      html += `<option value="${choice.id}">${choice.text}</option>`;
+    });
+    
+    html += `
+        </select>
+      </div>
+    `;
+  }
+  
+  html += `
+      </div>
+      <button class="form-group btn btn-primary btn-lg mt-3" type="button" onclick="createMapping()">Create Mapping</button>
+    </div>
+  `;
+  
+  mappingSection.innerHTML = html;
+  
+  // Colorize badges
+  colorizeBadges();
+}
+
+async function createMapping() {
+  // Get URLs
+  const dataUrl = document.querySelector('input[name="data_url"]').value || 
+                  document.querySelector('input[name="data_url"]').placeholder;
+  const templateUrl = document.querySelector('input[name="template_url"]').value || 
+                    document.querySelector('input[name="template_url"]').placeholder;
+  
+  // Get types
+  const dataTypes = Array.from(document.querySelectorAll('#data-subject-badges .badge'))
+    .map(badge => badge.getAttribute('data-uri'));
+  const templateTypes = Array.from(document.querySelectorAll('#template-object-badges .badge'))
+    .map(badge => badge.getAttribute('data-uri'));
+  
+  // Get predicate
+  const predicateField = document.querySelector('input[name="advanced-mapping_predicate_uri"]');
+  const predicate = predicateField ? predicateField.value : 'http://purl.obolibrary.org/obo/RO_0010002';
+  
+  // Get use_template_rowwise
+  const templateRowwiseField = document.querySelector('input[name="use_template_rowwise"]');
+  const useTemplateRowwise = templateRowwiseField ? templateRowwiseField.checked : false;
+  
+  // Get mapping selections
+  const mapDict = {};
+  const selects = document.querySelectorAll('#mappingWidgets select');
+  selects.forEach(select => {
+    if (select.value && select.value !== 'None') {
+      mapDict[select.name] = select.value;
+    }
+  });
+  
+  if (Object.keys(mapDict).length === 0) {
+    alert('Please select at least one mapping before creating the mapping file.');
+    return;
+  }
+  
+  // Prepare request
+  const requestData = {
+    data_url: dataUrl,
+    template_url: templateUrl,
+    use_template_rowwise: useTemplateRowwise,
+    data_types: dataTypes,
+    template_types: templateTypes,
+    predicate: predicate,
+    map: mapDict
+  };
+  
+  // Show loading
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Creating...';
+  
+  try {
+    const response = await fetch('/api/mapping', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create mapping');
+    }
+    
+    // Get the YAML content
+    const yamlContent = await response.text();
+    
+    // Display result
+    displayResult(yamlContent, dataUrl);
+    
+    showMessage('Mapping created successfully!', 'success');
+    
+  } catch (error) {
+    console.error('Error creating mapping:', error);
+    showMessage('Error creating mapping: ' + error.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Create Mapping';
+  }
+}
+
+function displayResult(yamlContent, dataUrl) {
+  // Get or create results section
+  let resultsSection = document.getElementById('results');
+  if (!resultsSection) {
+    resultsSection = document.createElement('div');
+    resultsSection.id = 'results';
+    resultsSection.className = 'container-fluid pb-3';
+    document.getElementById('mappingForm').after(resultsSection);
+  }
+  
+  // Generate filename
+  const filename = dataUrl.split('/').pop().split('.')[0] + '-map.yaml';
+  
+  // Create download data URL
+  const blob = new Blob([yamlContent], { type: 'text/yaml' });
+  const downloadUrl = URL.createObjectURL(blob);
+  
+  // Build HTML
+  resultsSection.innerHTML = `
+    <div class="card card-body">
+      <h5 class="card-title">Result</h5>
+      <pre class="prettyprint lang-yaml" style="white-space: pre-wrap;">${escapeHtml(yamlContent)}</pre>
+    </div>
+    <a class="form-group btn btn-primary btn-lg my-3" download="${filename}" href="${downloadUrl}">Download</a>
+  `;
+  
+  // Show results section
+  if (!resultsSection.classList.contains('show')) {
+    resultsSection.classList.add('show');
+  }
+  
+  // Scroll to results
+  resultsSection.scrollIntoView({ behavior: 'smooth' });
+  
+  // Apply syntax highlighting if available
+  if (window.PR) {
+    PR.prettyPrint();
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+</script>
 {{super()}}
 {% endblock %}

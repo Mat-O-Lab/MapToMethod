@@ -48,17 +48,18 @@ class ListWidgetBootstrap(ListWidget):
         return Markup("".join(html))
 
 
+from wtforms import StringField
+
 class AdvancedForm(Form):
-    data_subject_super_class_uris = FieldList(
-        URLField(
-            "URI", validators=[Optional(), URL()], render_kw={"class": "form-control"}
-        ),
-        min_entries=3,
-        default=[maptomethod.OA.Annotation, maptomethod.CSVW.Column],
-        widget=ListWidgetBootstrap(col_class="col-sm-4"),
-        render_kw={"class": "row"},
-        description="URI of superclass to query for subjects in data.",
+    # Hidden field to store data subject types as comma-separated values (using StringField to avoid URL validation)
+    data_subject_types = StringField(
+        "Data Subject Types",
+        validators=[Optional()],
+        render_kw={"class": "form-control d-none", "id": "data-subject-types-hidden"},
+        default=f"{maptomethod.OA.Annotation},{maptomethod.CSVW.Column}",
+        description="Types to query for subjects in data document.",
     )
+    
     mapping_predicate_uri = URLField(
         "URL Mapping Predicat",
         # validators=[DataRequired(),URL()],
@@ -66,15 +67,14 @@ class AdvancedForm(Form):
         default=maptomethod.ContentToBearingRelation,
         description="URI of object property to use as predicate.",
     )
-    method_object_super_class_uris = FieldList(
-        URLField(
-            "URI", validators=[Optional(), URL()], render_kw={"class": "form-control"}
-        ),
-        min_entries=3,
-        default=[maptomethod.InformtionContentEntity, maptomethod.TemporalRegionClass],
-        widget=ListWidgetBootstrap(col_class="col-sm-4"),
-        render_kw={"class": "row"},
-        description="URI of superclass to query for objects in method.",
+    
+    # Hidden field to store template object types as comma-separated values (using StringField to avoid URL validation)
+    template_object_types = StringField(
+        "Template Object Types",
+        validators=[Optional()],
+        render_kw={"class": "form-control d-none", "id": "template-object-types-hidden"},
+        default=f"{maptomethod.InformtionContentEntity},{maptomethod.TemporalRegionClass}",
+        description="Types to query for objects in template document.",
     )
 
 
@@ -88,21 +88,14 @@ class StartForm(StarletteForm):
         },
         description="Paste URL to meta data json file create from CSVToCSVW",
     )
-    method_url = URLField(
-        "URL Method Data",
-        render_kw={"class": "form-control"},
+    template_url = URLField(
+        "URL Template Data",
+        render_kw={
+            "placeholder": "https://raw.githubusercontent.com/Mat-O-Lab/MSEO/main/methods/DIN_EN_ISO_527-3.drawio.ttl",
+            "class": "form-control"
+        },
         validators=[Optional(), URL()],
-        description="Paste URL to method graph create with MSEO",
-    )
-    method_sel = SelectField(
-        "Method Graph",
-        render_kw={"class": "form-control"},
-        # [(v, k) for k, v in app.methods_dict.items()]
-        choices=[],
-        description=(
-            "Alternativly select a method graph"
-            "from https://github.com/Mat-O-Lab/MSEO/tree/main/methods"
-        ),
+        description="Paste URL to template graph create with MSEO",
     )
     # disabled uing d-none bootrap class
     use_template_rowwise = BooleanField(
@@ -111,7 +104,7 @@ class StartForm(StarletteForm):
             "class": "form-check form-check-input form-control-lg",
             "role": "switch",
         },
-        description="Check to duplicate the method template for each row in the table.",
+        description="Check to duplicate the template template for each row in the table.",
         default=False,
     )
     advanced = FormField(
@@ -137,22 +130,35 @@ class MappingFormList(StarletteForm):
     )
 
 
-def get_select_entries(names: List, choices: List) -> List[SelectForm]:
+def get_select_entries(objects_dict: dict, choices: List, abbreviate_fn=None) -> List[SelectForm]:
     """Converts custom metadata to a forms.SelectForm(), which can then be
     used by SelectFormlist() to dynamically render select items.
 
     Args:
-        names (List): List of names for selects to create
+        objects_dict (dict): Dict of objects with their metadata including types
         choices (List): List of choices for the selects
+        abbreviate_fn (callable): Function to abbreviate IRIs
 
     Returns:
         List[SelectForm]: _description_
     """
     all_select_items = []
-    for name in names:
+    for name, value in objects_dict.items():
         _id = uuid.uuid1()  # allows for multiple selects
         select_form = SelectForm()
-        select_form.select.label = name
+        
+        # Create label with type badge
+        entity_type = value.get("type") if isinstance(value, dict) else None
+        if entity_type and abbreviate_fn:
+            type_abbrev = abbreviate_fn(entity_type)
+            # Extract prefix for color coding
+            prefix = type_abbrev.split('#')[0] if '#' in type_abbrev else type_abbrev.split(':')[0]
+            # Create HTML with badge - will be colored by JavaScript
+            label_html = Markup(f'{name} <span class="badge type-badge" data-prefix="{prefix}" title="{entity_type}">{type_abbrev}</span>')
+            select_form.select.label = label_html
+        else:
+            select_form.select.label = name
+            
         select_form.select.name = name
         select_form.select.id = f"{name}-{_id}"
         select_form.select.choices = choices

@@ -224,12 +224,12 @@ class Mapper:
         data_url: str,
         method_url: str,
         use_template_rowwise: bool,
-        method_object_super_class_uris: List[URIRef] = [
+        method_object_types: List[URIRef] = [
             InformtionContentEntity,
             TemporalRegionClass,
         ],
         mapping_predicate_uri: URIRef = ContentToBearingRelation,
-        data_subject_super_class_uris: List[URIRef] = [OA.Annotation, CSVW.Column],
+        data_subject_types: List[URIRef] = [OA.Annotation, CSVW.Column],
         subjects: List[URIRef] = [],
         objects: List[URIRef] = [],
         maplist: List[Tuple[str, str]] = [],
@@ -260,7 +260,7 @@ class Mapper:
         # file_data, file_name =open_file(data_url)
         if not objects:
             self.objects, base_ns_objects = query_entities(
-                self.method_url, method_object_super_class_uris, self.authorization
+                self.method_url, method_object_types, self.authorization
             )
             self.base_ns_objects = base_ns_objects
         else:
@@ -270,7 +270,7 @@ class Mapper:
 
         if not subjects:
             self.subjects, base_ns_subjects = query_entities(
-                self.data_url, data_subject_super_class_uris, self.authorization
+                self.data_url, data_subject_types, self.authorization
             )
             self.base_ns_subjects = base_ns_subjects
         else:
@@ -393,6 +393,41 @@ def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -
     return (iterator_pattern, source_name)
 
 
+def get_all_types(data_url: str, authorization=None) -> List[str]:
+    """Get all unique rdf:type values from a semantic document.
+    
+    Args:
+        data_url: URL to the semantic document
+        authorization: Authorization header for HTTP requests
+    
+    Returns:
+        List of full IRI strings for all types found
+    """
+    logging.info("Extracting all rdf:type values from: {}".format(data_url))
+    
+    # Determine format
+    if data_url.endswith("/download/upload"):
+        format = "json-ld"
+    else:
+        format = guess_format(data_url)
+    
+    # Load the semantic document
+    data_data, data_name = open_file(data_url, authorization)
+    data = Graph()
+    data.parse(data=data_data, format=format)
+    
+    # Query for all unique type objects
+    types = set()
+    for s, p, o in data.triples((None, RDF.type, None)):
+        if isinstance(o, URIRef):
+            types.add(str(o))
+    
+    type_list = sorted(list(types))
+    logging.info("Found {} unique types: {}".format(len(type_list), type_list))
+    
+    return type_list
+
+
 def query_entities(
     data_url: str, entity_classes: List[URIRef], authorization=None
 ) -> dict:
@@ -405,12 +440,10 @@ def query_entities(
     Returns:
         dict: Dict with short entity IRI as key
     """
-    subclasses = [
-        get_all_sub_classes(superclass, authorization) for superclass in entity_classes
-    ]
-    class_list = [item for sublist in subclasses for item in sublist]
+    # Use entity classes directly - no subclass expansion needed
+    class_list = entity_classes
     logging.info(
-        "query data at url: {}\nfor entitys classes: {}".format(data_url, class_list)
+        "query data at url: {}\nfor entity classes: {}".format(data_url, class_list)
     )
     # fix for crude ckan url
     if data_url.endswith("/download/upload"):
@@ -433,9 +466,14 @@ def query_entities(
         base_ns = data_url + "/"
 
     data_entities = dict()
-    subjects = [
-        s for s, p, o in data.triples((None, RDF.type, None)) if o in class_list
-    ]
+    # Get subjects with their types
+    subject_types = {}
+    for s, p, o in data.triples((None, RDF.type, None)):
+        if o in class_list:
+            subject_types[s] = o
+    
+    subjects = list(subject_types.keys())
+    
     for s in subjects:
         pos = [
             (p, o)
@@ -445,15 +483,22 @@ def query_entities(
         # name=s.rsplit('/',1)[-1].rsplit('#',1)[-1]
         name = strip_namespace(s)
         print(s, pos)
+        
+        # Include type information
+        entity_type = subject_types.get(s)
         if pos:
             p, o = pos[0]
             data_entities[name] = {
                 "uri": str(s),
                 "property": strip_namespace(p),
                 "text": str(o),
+                "type": str(entity_type) if entity_type else None,
             }
         else:
-            data_entities[name] = {"uri": str(s)}
+            data_entities[name] = {
+                "uri": str(s),
+                "type": str(entity_type) if entity_type else None,
+            }
     logging.info("query resuls: {}".format(data_entities))
     return data_entities, base_ns
 

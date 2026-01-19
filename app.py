@@ -26,6 +26,33 @@ import settings
 
 setting = settings.Setting()
 
+# Namespace prefixes for abbreviating IRIs
+NAMESPACE_PREFIXES = {
+    'http://www.w3.org/ns/csvw#': 'csvw',
+    'http://www.w3.org/ns/oa#': 'oa',
+    'http://www.w3.org/ns/prov#': 'prov',
+    'http://www.w3.org/2002/07/owl#': 'owl',
+    'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
+    'http://www.w3.org/2000/01/rdf-schema#': 'rdfs',
+    'http://purl.obolibrary.org/obo/': 'obo',
+    'https://spec.industrialontologies.org/ontology/core/Core/': 'iof',
+    'http://qudt.org/schema/qudt/': 'qudt',
+    'https://purl.matolab.org/mseo/mid/': 'mseo'
+}
+
+def abbreviate_iri(iri):
+    """Abbreviate IRI using known namespace prefixes."""
+    if not iri:
+        return None
+    for namespace, prefix in NAMESPACE_PREFIXES.items():
+        if iri.startswith(namespace):
+            return prefix + '#' + iri[len(namespace):]
+    # If no prefix found, show last part after # or /
+    parts = iri.split('/')
+    if '#' in parts[-1]:
+        parts = iri.split('#')
+    return parts[-1]
+
 
 config_name = os.environ.get("APP_MODE") or "development"
 middleware = [
@@ -75,16 +102,6 @@ app = FastAPI(
 app.mount("/static/", StaticFiles(directory="static", html=True), name="static")
 templates = Jinja2Templates(directory="templates")
 
-print(os.environ.get("APP_MODE", "production"))
-if os.environ.get("APP_MODE", "production") == "development":
-    print("fetching methods form MSEO repo")
-    app.methods_dict = {
-        "DIN_EN_ISO_527": "https://github.com/Mat-O-Lab/MSEO/raw/main/methods/DIN_EN_ISO_527-3.drawio.ttl"
-    }
-else:
-    app.methods_dict = maptomethod.get_methods()
-
-
 # flash integration flike flask flash
 def flash(request: Request, message: Any, category: str = "info") -> None:
     if "_messages" not in request.session:
@@ -102,7 +119,6 @@ templates.env.globals["get_flashed_messages"] = get_flashed_messages
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
     start_form = await forms.StartForm.from_formdata(request)
-    start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
     # request.session.clear()
     return templates.TemplateResponse(
         "index.html",
@@ -128,7 +144,6 @@ async def create_mapper(request: Request):
     start_form = await forms.StartForm.from_formdata(request)
     logging.debug(start_form.data)
 
-    start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
     mapping_form = ""
     logging.info("create mapping")
     if await start_form.validate_on_submit():
@@ -142,24 +157,33 @@ async def create_mapper(request: Request):
         data_url = start_form.data_url.data
         request.session["data_url"] = data_url
 
-        # if url to method graph provided use it if not use select widget
+        # Use method_url from form or use placeholder
         if start_form.method_url.data:
             method_url = start_form.method_url.data
         else:
-            method_url = start_form.method_sel.data
+            method_url = start_form.method_url.render_kw["placeholder"]
+            flash(
+                request,
+                "URL Method File empty: using placeholder value for demonstration",
+                "info",
+            )
         request.session["method_url"] = method_url
         request.session["use_template_rowwise"] = start_form.use_template_rowwise.data
-        # entrys from advanced form
-        mapping_subject_class_uris = (
-            start_form.advanced.data_subject_super_class_uris.data
-        )
-        request.session["mapping_subject_class_uris"] = mapping_subject_class_uris
+        # entrys from advanced form - parse comma-separated values
+        data_subject_types_str = start_form.advanced.data_subject_types.data or ""
+        mapping_subject_types = [
+            uri.strip() for uri in data_subject_types_str.split(",") if uri.strip()
+        ]
+        request.session["mapping_subject_types"] = mapping_subject_types
+        
         mapping_predicate_uri = start_form.advanced.mapping_predicate_uri.data
         request.session["mapping_predicate_uri"] = mapping_predicate_uri
-        mapping_object_class_uris = (
-            start_form.advanced.method_object_super_class_uris.data
-        )
-        request.session["mapping_object_class_uris"] = mapping_object_class_uris
+        
+        method_object_types_str = start_form.advanced.method_object_types.data or ""
+        mapping_object_types = [
+            uri.strip() for uri in method_object_types_str.split(",") if uri.strip()
+        ]
+        request.session["mapping_object_types"] = mapping_object_types
 
         try:
             mapper = maptomethod.Mapper(
@@ -167,14 +191,17 @@ async def create_mapper(request: Request):
                 method_url=method_url,
                 use_template_rowwise=request.session["use_template_rowwise"],
                 mapping_predicate_uri=URIRef(mapping_predicate_uri),
-                data_subject_super_class_uris=[
-                    URIRef(uri) for uri in mapping_subject_class_uris
+                data_subject_types=[
+                    URIRef(uri) for uri in mapping_subject_types
                 ],
-                method_object_super_class_uris=[
-                    URIRef(uri) for uri in mapping_object_class_uris
+                method_object_types=[
+                    URIRef(uri) for uri in mapping_object_types
                 ],
                 authorization=authorization,
             )
+            # Store subjects and objects in session for later use in /map
+            request.session["subjects"] = mapper.subjects
+            request.session["objects"] = mapper.objects
             flash(request, str(mapper), "info")
             # flash(request, str(mapper.subjects), "info")
         except Exception as err:
@@ -182,15 +209,34 @@ async def create_mapper(request: Request):
         # print(mapper.objects.keys())
         # only named instances in the data can be mapped
         else:
-            info_choices = [
-                (id, value["text"])
-                for id, value in mapper.subjects.items()
-                if "text" in value.keys()
-            ]
+            # Create choices with type information
+            info_choices = []
+            for id, value in mapper.subjects.items():
+                if "text" in value.keys():
+                    text = value["text"]
+                    entity_type = value.get("type")
+                    if entity_type:
+                        type_abbrev = abbreviate_iri(entity_type)
+                        choice_text = f"{text} ({type_abbrev})"
+                    else:
+                        choice_text = text
+                    info_choices.append((id, choice_text))
             info_choices.insert(0, (None, "None"))
-            select_forms = forms.get_select_entries(mapper.objects.keys(), info_choices)
+            
+            # Pass both objects dict and mapper.objects for type info
+            select_forms = forms.get_select_entries(
+                mapper.objects, 
+                info_choices,
+                abbreviate_iri
+            )
             mapping_form = await forms.MappingFormList.from_formdata(request)
             mapping_form.assignments.entries = select_forms
+            
+            # Populate form fields from session to ensure badges persist
+            start_form.advanced.data_subject_types.data = ",".join(mapping_subject_types)
+            start_form.advanced.method_object_types.data = ",".join(mapping_object_types)
+            start_form.advanced.mapping_predicate_uri.data = mapping_predicate_uri
+            
     request.session["auth"] = authorization
     logging.debug("session: {}".format(request.session))
 
@@ -220,17 +266,32 @@ async def map(request: Request):
     formdata = await request.form()
     data_url = request.session.get("data_url", None)
     method_url = request.session.get("method_url", None)
-    method_sel = request.session.get("method_url", None)
-    subjects = request.session.get("subjects", None)
-    objects = request.session.get("objects", None)
     use_template_rowwise = request.session.get("use_template_rowwise", False)
-    mapping_subject_class_uris = request.session.get("mapping_subject_class_uris", None)
+    mapping_subject_types = request.session.get("mapping_subject_types", [])
     mapping_predicate_uri = request.session.get("mapping_predicate_uri", None)
-    mapping_object_class_uris = request.session.get("mapping_object_class_uris", None)
-    start_form = forms.StartForm(
-        request, data_url=data_url, method_url=method_url, method_sel=method_sel
+    mapping_object_types = request.session.get("mapping_object_types", [])
+    
+    # Re-query entities to ensure we have complete data (including "property" field)
+    # instead of relying on potentially incomplete session storage
+    subjects, _ = maptomethod.query_entities(
+        data_url,
+        [URIRef(uri) for uri in mapping_subject_types],
+        authorization
     )
-    start_form.method_sel.choices = [(v, k) for k, v in app.methods_dict.items()]
+    objects, _ = maptomethod.query_entities(
+        method_url,
+        [URIRef(uri) for uri in mapping_object_types],
+        authorization
+    )
+    
+    # Create form and populate with session data
+    start_form = forms.StartForm(
+        request, data_url=data_url, method_url=method_url
+    )
+    # Populate advanced fields with session data
+    start_form.advanced.data_subject_types.data = ",".join(mapping_subject_types)
+    start_form.advanced.method_object_types.data = ",".join(mapping_object_types)
+    start_form.advanced.mapping_predicate_uri.data = mapping_predicate_uri
     # entrys from advanced form
 
     result = ""
@@ -240,19 +301,21 @@ async def map(request: Request):
     select_dict = dict(formdata)
     maplist = [(k, v) for k, v in select_dict.items() if v != "None"]
     logging.info("Creating mapping file for mapping list: {}".format(maplist))
+    logging.info("Session mapping_subject_types: {}".format(mapping_subject_types))
+    logging.info("Session mapping_object_types: {}".format(mapping_object_types))
+    logging.info("Re-queried subjects: {}".format(subjects))
+    logging.info("Re-queried objects: {}".format(objects))
     request.session["maplist"] = maplist
-    logging.debug("subjects: {}".format(subjects))
-    logging.debug("objects: {}".format(objects))
     with maptomethod.Mapper(
         data_url=data_url,
         method_url=method_url,
         use_template_rowwise=use_template_rowwise,
         mapping_predicate_uri=URIRef(mapping_predicate_uri),
-        data_subject_super_class_uris=[
-            URIRef(uri) for uri in mapping_subject_class_uris
+        data_subject_types=[
+            URIRef(uri) for uri in mapping_subject_types
         ],
-        method_object_super_class_uris=[
-            URIRef(uri) for uri in mapping_object_class_uris
+        method_object_types=[
+            URIRef(uri) for uri in mapping_object_types
         ],
         maplist=maplist,
         subjects=subjects,
@@ -302,43 +365,76 @@ class QueryRequest(BaseModel):
         }
 
 
-@app.post("/api/entities")
-def query_entities(request: QueryRequest, req: Request):
-    authorization = req.headers.get("Authorization", None)
-    # translate urls in entity_classes list to URIRef objects
-    request.entity_classes = [URIRef(str(url)) for url in request.entity_classes]
-    return maptomethod.query_entities(
-        str(request.url), request.entity_classes, authorization
-    )
+@app.get("/api/types")
+def get_types(
+    url: str = "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+    req: Request = None
+):
+    """Get all unique rdf:type values from a semantic document.
+    
+    Args:
+        url: URL to the semantic document (defaults to example data file)
+    
+    Returns:
+        JSON array of type IRIs
+    """
+    authorization = req.headers.get("Authorization", None) if req else None
+    try:
+        types = maptomethod.get_all_types(url, authorization)
+        return types
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))
+
+
+@app.get("/api/entities")
+def query_entities(
+    url: str = "https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json",
+    types: str = "http://www.w3.org/ns/oa#Annotation,http://www.w3.org/ns/csvw#Column",
+    req: Request = None
+):
+    """Get entities of specified types from a semantic document.
+    
+    Args:
+        url: URL to the semantic document (defaults to example data file)
+        types: Comma-separated list of type URIs (defaults to Annotation and Column)
+    
+    Returns:
+        JSON dict of entities with their metadata
+    """
+    authorization = req.headers.get("Authorization", None) if req else None
+    # Parse comma-separated types and convert to URIRef objects
+    type_list = [URIRef(uri.strip()) for uri in types.split(",") if uri.strip()]
+    entities, base_ns = maptomethod.query_entities(url, type_list, authorization)
+    return {"entities": entities, "base_namespace": base_ns}
 
 
 class MappingRequest(BaseModel):
     data_url: AnyUrl = Field(
         "", title="Datas Graph Url", description="Url to data metadata to use."
     )
-    method_url: AnyUrl = Field(
-        "", title="Method Graph Url", description="Url to knowledge graph to use."
+    template_url: AnyUrl = Field(
+        "", title="Template Graph Url", description="Url to knowledge graph to use."
     )
     use_template_rowwise: Optional[bool] = Field(
         False,
         title="Use Template Rowwise",
-        description="If to duplicate the Method Graph for each row.",
+        description="If to duplicate the Template Graph for each row.",
         omit_default=True,
     )
-    data_super_classes: List = Field(
+    data_types: List = Field(
         [maptomethod.OA.Annotation, maptomethod.CSVW.Column],
-        title="Subject Super Classes",
-        description="List of subject super classes to query for mapping partners in data.",
+        title="Data Subject Types",
+        description="List of entity types to query for mapping partners in data.",
     )
     predicate: AnyUrl = Field(
         maptomethod.ContentToBearingRelation,
         title="predicate property",
-        description="Predicate Property to connect data to method entities.",
+        description="Predicate Property to connect data to template entities.",
     )
-    method_super_classes: List = Field(
+    template_types: List = Field(
         [maptomethod.InformtionContentEntity, maptomethod.TemporalRegionClass],
-        title="Object Super Classes",
-        description="List of object super classes to query for mapping partners in method graph.",
+        title="Template Object Types",
+        description="List of entity types to query for mapping partners in template graph.",
     )
     map: dict = Field(
         title="Map Dict",
@@ -380,14 +476,14 @@ def mapping(request: MappingRequest, req: Request) -> StreamingResponse:
     try:
         result = maptomethod.Mapper(
             str(request.data_url),
-            str(request.method_url),
-            method_object_super_class_uris=[
-                URIRef(str(uri)) for uri in request.method_super_classes
+            str(request.template_url),
+            method_object_types=[
+                URIRef(str(uri)) for uri in request.template_types
             ],
             mapping_predicate_uri=URIRef(str(request.predicate)),
             use_template_rowwise=request.use_template_rowwise,
-            data_subject_super_class_uris=[
-                URIRef(str(uri)) for uri in request.data_super_classes
+            data_subject_types=[
+                URIRef(str(uri)) for uri in request.data_types
             ],
             maplist=request.map.items(),
             authorization=authorization,
