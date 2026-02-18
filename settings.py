@@ -8,7 +8,7 @@ class Setting(BaseSettings):
     contact_name: str = str(os.environ.get("ADMIN_NAME", "MapToMethod Admin"))
     admin_email: str = str(os.environ.get("ADMIN_MAIL", "maptomethod@matolab.org"))
     items_per_user: int = 50
-    version: str = str(os.environ.get("APP_VERSION", "v1.1.4"))
+    version: str = str(os.environ.get("APP_VERSION", "v1.1.5"))
     config_name: str = str(os.environ.get("APP_MODE", "development"))
     openapi_url: str = "/api/openapi.json"
     docs_url: str = "/api/docs"

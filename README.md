@@ -53,7 +53,7 @@ git clone https://github.com/Mat-O-Lab/MapToMethod
 cd MapToMethod
 
 # 2. Start the service
-docker-compose up -d
+docker compose up -d
 
 # 3. Access the application
 # Web UI: http://localhost:5005
@@ -395,11 +395,11 @@ The advanced settings control **which entities** are queried from your data and 
 For local development with hot-reloading:
 
 ```bash
-# Using docker-compose.dev.yml
-docker-compose -f docker-compose.dev.yml up
+# Using compose.dev.yml
+docker compose -f compose.dev.yml up
 
 # Or set environment variable
-APP_MODE=development docker-compose up
+APP_MODE=development
 ```
 
 Access at: http://localhost:5005
@@ -409,7 +409,7 @@ Access at: http://localhost:5005
 For production deployment:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Or pull the pre-built container:
@@ -448,12 +448,12 @@ Error: Cannot connect to the Docker daemon
 ```
 Error: bind: address already in use
 ```
-→ Change the port in `docker-compose.yml` or stop conflicting services:
+→ Change the port in `compose.yml` or stop conflicting services:
 ```bash
 # Find what's using port 5005
 lsof -i :5005
 # Or use a different port
-PORT=5006 docker-compose up
+PORT=5006 docker compose up
 ```
 
 **No entities found**
@@ -489,12 +489,12 @@ Enable detailed logging:
 APP_MODE=development
 
 # Restart services
-docker-compose restart
+docker compose restart
 ```
 
 View logs in real-time:
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### Check Service Health

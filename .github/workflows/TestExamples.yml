@@ -29,7 +29,7 @@ jobs:
 
       - name: Start services
         run: |
-          docker compose -f docker-compose.dev.yml up -d --build
+          docker compose -f compose.dev.yml up -d --build
           echo "Waiting for services to be ready..."
           sleep 30
           docker compose ps
