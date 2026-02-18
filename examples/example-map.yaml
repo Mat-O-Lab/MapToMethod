@@ -8,7 +8,7 @@ sources:
   annotations: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
     iterator: '$.notes[*]', referenceFormulation: jsonpath}
   columns: {access: 'https://github.com/Mat-O-Lab/CSVToCSVW/raw/main/examples/example-metadata.json',
-    iterator: '$.tables[*].tableSchema.columns[*]', referenceFormulation: jsonpath}
+    iterator: '$.tables.tableSchema.columns[*]', referenceFormulation: jsonpath}
 use_template_rowwise: 'false'
 mappings:
   SpecimenID:
