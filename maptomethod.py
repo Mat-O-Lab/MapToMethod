@@ -309,7 +309,7 @@ def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -
         
     Returns:
         Tuple of (iterator_pattern, source_name)
-        e.g., ("$.notes[*]", "annotations") or ("$..columns[*]", "columns")
+        e.g., ("$.notes[*]", "annotations") or ("$.tables[*].tableSchema.columns[*]", "columns")
     """
     # Load the JSON file
     filedata, filename = open_file(data_url, authorization)
@@ -326,6 +326,7 @@ def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -
     def find_array_with_field(obj, path="$", field=None):
         """
         Recursively search for arrays containing objects with the specified field.
+        Properly handles nested arrays by adding [*] notation for each array level.
         Returns list of tuples: (jsonpath, array_key_name)
         """
         results = []
@@ -337,12 +338,15 @@ def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -
                     # Check if this array contains objects with our field
                     if isinstance(value[0], dict) and field in value[0]:
                         results.append((f"{new_path}[*]", key))
-                    # Continue searching recursively
-                    results.extend(find_array_with_field(value, new_path, field))
+                    # Continue searching recursively within the array
+                    # But add [*] to the path since we're traversing into an array
+                    results.extend(find_array_with_field(value, f"{new_path}[*]", field))
                 else:
                     results.extend(find_array_with_field(value, new_path, field))
         elif isinstance(obj, list):
+            # When traversing a list, check each item
             for item in obj:
+                # Don't modify the path - we already added [*] when we entered the array
                 results.extend(find_array_with_field(item, path, field))
         
         return results
