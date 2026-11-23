@@ -234,6 +234,21 @@ curl -X POST "http://localhost:5005/api/entities" \
 }
 ```
 
+**Entities without a label:** an entity that has neither `rdfs:label` nor `csvw:name` is still returned, so it can be mapped.
+It is identified by its own IRI instead of a label:
+
+```json
+"unlabeled": {
+  "uri": "http://example.com/data/unlabeled",
+  "property": "@id",
+  "text": "http://example.com/data/unlabeled"
+}
+```
+
+The generated YARRRML rule then matches on `$(@id)` equal to that IRI (instead of `$(label)` equal to the label text), and the
+source iterator is the JSON array that contains this `@id`. The IRI is compared exactly, so the data must write the `@id` as an
+absolute IRI (compact or relative `@id`s do not match).
+
 ### Generate Mapping Endpoint
 
 **Purpose:** Create YARRRML mapping rules based on entity pairs.
@@ -419,6 +434,10 @@ docker pull ghcr.io/mat-o-lab/maptomethod:latest
 docker run -p 5005:5000 ghcr.io/mat-o-lab/maptomethod:latest
 ```
 
+The image is built on `python:3.13-alpine`, patched at build time and scans clean with [Trivy](https://trivy.dev). In production pin a
+release tag (for example `ghcr.io/mat-o-lab/maptomethod:v1.1.7`) instead of `latest`. The generated YARRRML keeps each `po:` entry as an
+inline list (`- [predicate, object]`), the form `yarrrml-parser` and [RDFConverter](https://github.com/Mat-O-Lab/RDFConverter) accept.
+
 ### Environment Variables
 
 Configure via `.env` file or environment variables:
@@ -471,6 +490,7 @@ PORT=5006 docker compose up
 → Verify:
 - The `property` field in entities (name, label, etc.) exists in your data
 - The condition strings match exactly (case-sensitive)
+- Entities without a label are matched by their absolute `@id`; compact or relative `@id`s in the data do not match
 - Data structure supports the iterator (e.g., `$..columns[*]` needs a columns array)
 
 **Template URL returns 404**
