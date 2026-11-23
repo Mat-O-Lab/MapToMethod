@@ -434,7 +434,7 @@ docker pull ghcr.io/mat-o-lab/maptomethod:latest
 docker run -p 5005:5000 ghcr.io/mat-o-lab/maptomethod:latest
 ```
 
-The image is built on `python:3.13-alpine`, patched at build time and scans clean with [Trivy](https://trivy.dev). In production pin a
+The image is built on `python:3.13-alpine`, patched at build time and scanned with [Trivy](https://trivy.dev) before each release. In production pin a
 release tag (for example `ghcr.io/mat-o-lab/maptomethod:v1.1.7`) instead of `latest`. The generated YARRRML keeps each `po:` entry as an
 inline list (`- [predicate, object]`), the form `yarrrml-parser` and [RDFConverter](https://github.com/Mat-O-Lab/RDFConverter) accept.
 
