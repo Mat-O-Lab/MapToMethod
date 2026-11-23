@@ -27,6 +27,16 @@ if not SSL_VERIFY:
     requests.packages.urllib3.disable_warnings()
 
 
+def dump_yaml(data) -> str:
+    """Dump a YARRRML mapping as yaml.
+
+    default_flow_style=None keeps leaf lists inline (``- [pred, obj]``), as PyYAML < 5.1
+    did. yarrrml-parser silently drops po: entries written as block-style nested lists,
+    so this form is required by the RDFConverter pipeline.
+    """
+    return dump(data, Dumper=Dumper, allow_unicode=True, default_flow_style=None)
+
+
 def dict_representer(dumper, data):
     return dumper.represent_dict(data.items())
 
@@ -294,7 +304,7 @@ class Mapper:
 
     def to_pretty_yaml(self) -> str:
         result = self.to_yaml()
-        result["filedata"] = dump(result["filedata"], Dumper=Dumper, allow_unicode=True)
+        result["filedata"] = dump_yaml(result["filedata"])
         return result
 
 
