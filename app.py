@@ -505,12 +505,17 @@ async def info() -> dict:
     return setting
 
 
+def load_log_config(path: str = "log_config.yml") -> dict:
+    """Load the logging dict config (PyYAML >= 6 requires an explicit loader)."""
+    with open(path) as f:
+        return yaml.safe_load(f)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app_mode = os.environ.get("APP_MODE") or "production"
-    with open("log_config.yml") as f:
-        config = yaml.load(f)
-        logging.config.dictConfig(config)
+    config = load_log_config()
+    logging.config.dictConfig(config)
     if app_mode == "development":
         reload = True
         access_log = True
