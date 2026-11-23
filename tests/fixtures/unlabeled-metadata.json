@@ -1,0 +1,12 @@
+{
+  "@context": {
+    "label": "http://www.w3.org/2000/01/rdf-schema#label",
+    "oa": "http://www.w3.org/ns/oa#",
+    "notes": {"@id": "http://www.w3.org/ns/csvw#note", "@container": "@set"}
+  },
+  "@id": "http://example.org/data/table",
+  "notes": [
+    {"@id": "http://example.org/data/labeled", "@type": "oa:Annotation", "label": "Width"},
+    {"@id": "http://example.org/data/unlabeled", "@type": "oa:Annotation"}
+  ]
+}
