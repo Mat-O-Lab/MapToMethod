@@ -298,7 +298,9 @@ class Mapper:
         return result
 
 
-def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -> Tuple[str, str]:
+def find_jsonpath_iterator(
+    data_url: str, field_name: str, authorization=None, field_value: str = None
+) -> Tuple[str, str]:
     """
     Find the JSONPath iterator for objects containing a specific field.
     
@@ -306,6 +308,8 @@ def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -
         data_url: URL to the JSON file
         field_name: Field to search for (e.g., "label", "name")
         authorization: Authorization header
+        field_value: If given, only arrays holding an object whose field_name
+            equals this value qualify (used to locate a single entity by "@id")
         
     Returns:
         Tuple of (iterator_pattern, source_name)
@@ -336,7 +340,14 @@ def find_jsonpath_iterator(data_url: str, field_name: str, authorization=None) -
                 new_path = f"{path}.{key}"
                 if isinstance(value, list) and len(value) > 0:
                     # Check if this array contains objects with our field
-                    if isinstance(value[0], dict) and field in value[0]:
+                    if field_value is None:
+                        hit = isinstance(value[0], dict) and field in value[0]
+                    else:
+                        hit = any(
+                            isinstance(i, dict) and i.get(field) == field_value
+                            for i in value
+                        )
+                    if hit:
                         results.append((f"{new_path}[*]", key))
                     # Continue searching recursively within the array
                     # But add [*] to the path since we're traversing into an array
@@ -478,8 +489,11 @@ def query_entities(
                 "type": str(entity_type) if entity_type else None,
             }
         else:
+            # No label found - identify the entity by its own @id (IRI)
             data_entities[name] = {
                 "uri": str(s),
+                "property": "@id",
+                "text": str(s),
                 "type": str(entity_type) if entity_type else None,
             }
     logging.info("query resuls: {}".format(data_entities))
@@ -527,22 +541,25 @@ def get_mapping_output(
         _il = subjects_dict.get(il_id, None)
         if _il and "property" in _il:
             field = _il["property"]
-            if field not in field_to_mappings:
-                field_to_mappings[field] = []
-            field_to_mappings[field].append((ice_key, il_id, _il))
+            # entities identified by @id each live in their own array
+            key = (field, _il["text"]) if field == "@id" else (field, None)
+            field_to_mappings.setdefault(key, []).append((ice_key, il_id, _il))
     
     # Discover iterators for each field and build sources
     sources = OrderedDict()
     field_to_source = {}
     
-    for field in field_to_mappings.keys():
-        iterator, source_name = find_jsonpath_iterator(data_url, field, authorization)
+    for key in field_to_mappings.keys():
+        field, value = key
+        iterator, source_name = find_jsonpath_iterator(
+            data_url, field, authorization, field_value=value
+        )
         sources[source_name] = {
             "access": str(data_url),
             "iterator": iterator,
             "referenceFormulation": "jsonpath",
         }
-        field_to_source[field] = source_name
+        field_to_source[key] = source_name
     
     result["sources"] = sources
     result["use_template_rowwise"] = str(use_template_rowwise).lower()
@@ -552,8 +569,8 @@ def get_mapping_output(
     logging.debug(subjects_dict)
     
     # Generate mappings with correct source assignment
-    for field, mappings in field_to_mappings.items():
-        source_name = field_to_source[field]
+    for key, mappings in field_to_mappings.items():
+        source_name = field_to_source[key]
         for ice_key, il_id, _il in mappings:
             logging.debug("{} {} {}".format(ice_key, il_id, _il))
             

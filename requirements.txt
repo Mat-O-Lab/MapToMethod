@@ -1,5 +1,5 @@
 PyGithub
-PyYAML==3.13
+PyYAML>=6.0
 rdflib>=6.2.0
 WTForms
 pydantic>=2.0.0
