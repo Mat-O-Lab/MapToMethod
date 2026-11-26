@@ -121,9 +121,9 @@ async def index(request: Request):
     start_form = await forms.StartForm.from_formdata(request)
     # request.session.clear()
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "start_form": start_form,
             "mapping_form": "",
             "result": "",
@@ -241,9 +241,9 @@ async def create_mapper(request: Request):
     logging.debug("session: {}".format(request.session))
 
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "start_form": start_form,
             "mapping_form": mapping_form,
             "result": "",
@@ -330,9 +330,9 @@ async def map(request: Request):
         b64 = base64.b64encode(result_string.encode())
         payload = b64.decode()
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "start_form": start_form,
             "mapping_form": "",
             "filename": filename,
